@@ -1,5 +1,7 @@
 # model-tf
 
+**English** · [한국어](./README.ko.md)
+
 Model facts and evaluation tiers for AI coding models — the shared data layer
 behind [UsageSwitch](https://github.com/deximple/usageswitch)'s Suggestion
 feature (and usable by other tools, e.g. POSA).
