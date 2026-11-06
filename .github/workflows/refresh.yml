@@ -26,7 +26,7 @@ jobs:
         run: python sources/check_staleness.py | tee staleness.md
 
       - name: Open pull request on change
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: refresh/model-data
           delete-branch: true
