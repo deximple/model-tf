@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 """Refresh model-facts.json from official vendor documentation pages.
 
-Automated sources:
+Automated 1st-party and catalog sources:
   1. Anthropic Claude:
      - https://platform.claude.com/docs/en/models/overview (.md)
      - https://platform.claude.com/docs/en/build-with-claude/effort (.md)
   2. OpenAI / Codex:
      - https://developers.openai.com/api/docs/models (+ per-model pages)
      - https://learn.chatgpt.com/docs/models
-  3. OpenCode Go:
+  3. Google Gemini:
+     - https://ai.google.dev/gemini-api/docs/pricing (.md.txt)
+     - https://ai.google.dev/gemini-api/docs/models/<slug> (.md.txt)
+  4. xAI Grok:
+     - https://docs.x.ai/docs/models (.md)
+  5. Z.ai / Zhipu GLM:
+     - https://docs.z.ai/guides/overview/pricing (.md)
+     - https://docs.z.ai/guides/llm/glm-5.3 (.md)
+  6. OpenCode Go:
      - https://opencode.ai/docs/go/
 
 Rules:
@@ -39,6 +47,15 @@ CLAUDE_EFFORT_URL = "https://platform.claude.com/docs/en/build-with-claude/effor
 CLAUDE_EFFORT_MD_URL = "https://platform.claude.com/docs/en/build-with-claude/effort.md"
 OPENAI_MODELS_URL = "https://developers.openai.com/api/docs/models"
 CHATGPT_MODELS_URL = "https://learn.chatgpt.com/docs/models"
+GOOGLE_MODELS_URL = "https://ai.google.dev/gemini-api/docs/models"
+GOOGLE_PRICING_URL = "https://ai.google.dev/gemini-api/docs/pricing"
+GOOGLE_PRICING_MD_URL = "https://ai.google.dev/gemini-api/docs/pricing.md.txt"
+XAI_MODELS_URL = "https://docs.x.ai/docs/models"
+XAI_MODELS_MD_URL = "https://docs.x.ai/docs/models.md"
+ZAI_PRICING_URL = "https://docs.z.ai/guides/overview/pricing"
+ZAI_PRICING_MD_URL = "https://docs.z.ai/guides/overview/pricing.md"
+ZAI_GLM53_URL = "https://docs.z.ai/guides/llm/glm-5.3"
+ZAI_GLM53_MD_URL = "https://docs.z.ai/guides/llm/glm-5.3.md"
 OPENCODE_GO_URL = "https://opencode.ai/docs/go/"
 
 MANAGED_SOURCES = {
@@ -46,6 +63,11 @@ MANAGED_SOURCES = {
     CLAUDE_EFFORT_URL,
     OPENAI_MODELS_URL,
     CHATGPT_MODELS_URL,
+    GOOGLE_MODELS_URL,
+    GOOGLE_PRICING_URL,
+    XAI_MODELS_URL,
+    ZAI_PRICING_URL,
+    ZAI_GLM53_URL,
     OPENCODE_GO_URL,
 }
 
@@ -65,6 +87,8 @@ MAKER_BY_MODEL: dict[str, str] = {
     "glm-5.3-flash": "zhipuai",
     "glm-5.3": "zhipuai",
     "glm-5.2": "zhipuai",
+    "glm-5.1": "zhipuai",
+    "glm-5": "zhipuai",
     "kimi-k3.1-pro": "moonshotai",
     "kimi-k3": "moonshotai",
     "kimi-k2.7-code": "moonshotai",
@@ -90,7 +114,16 @@ MAKER_BY_MODEL: dict[str, str] = {
     "hy4-preview": "tencent",
     "hy3": "tencent",
     "grok-4.7": "xai",
+    "grok-4.6": "xai",
+    "grok-4.5": "xai",
+    "grok-4.3": "xai",
+    "grok-build-0.1": "xai",
     "gemini-4-argon": "google",
+    "gemini-3.8-flash": "google",
+    "gemini-3.6-flash": "google",
+    "gemini-3.5-flash-lite": "google",
+    "gemini-3.1-pro-preview": "google",
+    "gemini-3.1-flash-lite": "google",
 }
 
 MAKER_PREFIX_RULES: list[tuple[str, str]] = [
@@ -122,15 +155,49 @@ KNOWN_EFFORTS: dict[str, list[str]] = {
     "deepseek-v4-pro": ["none", "low", "high", "max"],
     "deepseek-v4.1-flash": ["none", "low", "high", "max"],
     "gemini-4-argon": ["low", "medium", "high"],
+    "gemini-3.8-flash": ["low", "medium", "high"],
     "grok-4.7": ["low", "medium", "high", "xhigh"],
+    "grok-4.6": ["low", "medium", "high", "xhigh"],
+    "grok-4.5": ["low", "medium", "high"],
     "glm-5.3": ["low", "high", "max"],
+    "muse-spark-1.3-contributor": ["minimal", "low", "medium", "high", "xhigh"],
 }
 
 NAME_OVERRIDES: dict[str, str] = {
     "gpt-5.6-luna": "GPT-5.6 Luna",
     "gpt-6-luna": "GPT-6 Luna",
     "hy4-preview": "Hy4 Preview",
+    "grok-4.7": "Grok 4.7",
+    "grok-4.6": "Grok 4.6",
+    "grok-4.5": "Grok 4.5",
+    "grok-4.3": "Grok 4.3",
+    "grok-build-0.1": "Grok Build 0.1",
 }
+
+GOOGLE_TRACKED_SLUGS = (
+    "gemini-4-argon",
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-pro-preview",
+    "gemini-3.1-flash-lite",
+)
+
+XAI_TRACKED_SLUGS = (
+    "grok-4.7",
+    "grok-4.6",
+    "grok-4.5",
+    "grok-4.3",
+    "grok-build-0.1",
+)
+
+ZAI_TRACKED_SLUGS = (
+    "glm-5.3",
+    "glm-5.3-flash",
+    "glm-5.2",
+    "glm-5.1",
+    "glm-5",
+)
 
 TAG_RE = re.compile(r"<[^>]+>")
 WS_RE = re.compile(r"\s+")
@@ -166,7 +233,7 @@ def _clean_num(val: float) -> int | float:
 
 
 def _parse_token_count(text: str) -> int | None:
-    m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*([MmKk])\s*tokens", text)
+    m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*([MmKk])\b(?:\s*tokens)?", text)
     if m:
         num = float(m.group(1))
         mult = 1_000_000 if m.group(2).upper() == "M" else 1_000
@@ -212,9 +279,7 @@ def parse_claude_docs(overview_md: str, effort_md: str, today: str) -> list[dict
     contexts = find_row("Context window")
     max_outputs = find_row("Max output")
 
-    supports_text_image = (
-        "text and image input" in overview_md.lower()
-    )
+    supports_text_image = "text and image input" in overview_md.lower()
     efforts_list = ["low", "medium", "high", "xhigh", "max"]
     for w in EFFORT_ORDER:
         if f"`{w}`" in effort_md and w not in efforts_list:
@@ -496,6 +561,306 @@ def parse_chatgpt_codex_contexts(chatgpt_html: str) -> dict[str, int]:
     return out
 
 
+def parse_google_docs(
+    pricing_md: str, model_mds: dict[str, str], today: str
+) -> list[dict[str, Any]]:
+    """Parse Google Gemini model pricing and token limits from official Markdown docs."""
+    pricing_by_slug: dict[str, dict[str, Any]] = {}
+    for m in re.finditer(
+        r"##\s+([^\n{]+)\{%[^\n]*id=\"([^\"]+)\"[^\n]*%\}(.*?)(?=\n##\s+|\Z)",
+        pricing_md,
+        re.S,
+    ):
+        raw_title, sec_id, body = m.group(1).strip(), m.group(2).strip(), m.group(3)
+        codes = re.findall(r"\[`([a-z0-9.-]+)`\]", body[:500])
+        slug = codes[0] if codes else sec_id
+        if slug not in GOOGLE_TRACKED_SLUGS:
+            continue
+        m_in = re.search(
+            r"\*\s+Input price[^\n]*\n\s*\*\s+[^\n]+\n\s*\*\s+\$([0-9.]+)", body
+        )
+        m_out = re.search(
+            r"\*\s+Output price[^\n]*\n\s*\*\s+[^\n]+\n\s*\*\s+\$([0-9.]+)", body
+        )
+        m_cache = re.search(
+            r"\*\s+Context caching price[^\n]*\n\s*\*\s+[^\n]+\n\s*\*\s+\$([0-9.]+)",
+            body,
+        )
+        pricing_by_slug[slug] = {
+            "name": re.sub(r"\s+Preview$", " Preview", raw_title).strip(),
+            "input": _clean_num(float(m_in.group(1))) if m_in else None,
+            "output": _clean_num(float(m_out.group(1))) if m_out else None,
+            "cachedRead": _clean_num(float(m_cache.group(1))) if m_cache else None,
+        }
+
+    models: list[dict[str, Any]] = []
+    vid = "google"
+    for slug in GOOGLE_TRACKED_SLUGS:
+        p = pricing_by_slug.get(slug)
+        if not p:
+            continue
+        md = model_mds.get(slug, "")
+        m_h1 = re.search(r"^#\s+([^\n]+)", md, re.M)
+        name = m_h1.group(1).strip() if m_h1 else p["name"]
+        values: list[dict[str, Any]] = []
+
+        m_ctx = re.search(
+            r"\*\*(?:Context window[^*]*|Input token limit)\*\*\s*([0-9,]+)", md
+        )
+        if m_ctx:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/contextTokens",
+                    "code": "contextTokens",
+                    "number": int(m_ctx.group(1).replace(",", "")),
+                    "text": None,
+                    "source": GOOGLE_MODELS_URL,
+                    "checkedAt": today,
+                }
+            )
+        m_out_tok = re.search(
+            r"\*\*(?:Max output|Output token limit)\*\*\s*([0-9,]+)", md
+        )
+        if m_out_tok:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/maxOutputTokens",
+                    "code": "maxOutputTokens",
+                    "number": int(m_out_tok.group(1).replace(",", "")),
+                    "text": None,
+                    "source": GOOGLE_MODELS_URL,
+                    "checkedAt": today,
+                }
+            )
+        m_inputs = re.search(r"\*\*Inputs\*\*\s*([^\n]+)", md)
+        if m_inputs:
+            kinds = [
+                w.lower()
+                for w in re.findall(r"\b(Text|Image|Video|Audio|PDF)\b", m_inputs.group(1))
+            ]
+            if kinds:
+                values.append(
+                    {
+                        "id": f"{vid}/{slug}/inputKinds",
+                        "code": "inputKinds",
+                        "number": None,
+                        "text": ",".join(kinds),
+                        "source": GOOGLE_MODELS_URL,
+                        "checkedAt": today,
+                    }
+                )
+        if p["input"] is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/inputPricePerMTok",
+                    "code": "inputPricePerMTok",
+                    "number": p["input"],
+                    "text": None,
+                    "source": GOOGLE_PRICING_URL,
+                    "checkedAt": today,
+                }
+            )
+        if p["output"] is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/outputPricePerMTok",
+                    "code": "outputPricePerMTok",
+                    "number": p["output"],
+                    "text": None,
+                    "source": GOOGLE_PRICING_URL,
+                    "checkedAt": today,
+                }
+            )
+        if p["cachedRead"] is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/cachedReadPricePerMTok",
+                    "code": "cachedReadPricePerMTok",
+                    "number": p["cachedRead"],
+                    "text": None,
+                    "source": GOOGLE_PRICING_URL,
+                    "checkedAt": today,
+                }
+            )
+        models.append(
+            {
+                "vendorId": vid,
+                "model": slug,
+                "name": name,
+                "efforts": list(KNOWN_EFFORTS.get(slug, [])),
+                "values": values,
+            }
+        )
+    return models
+
+
+def parse_xai_docs(xai_md: str, today: str) -> list[dict[str, Any]]:
+    """Parse xAI Grok Text API pricing table from https://docs.x.ai/docs/models.md."""
+    vid = "xai"
+    by_slug: dict[str, dict[str, Any]] = {}
+    for line in xai_md.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) != 5 or cells[0] in ("Model", "---"):
+            continue
+        raw_model, ctx_s, in_s, cache_s, out_s = cells
+        if "≥" in raw_model or ">=" in raw_model or ">" in raw_model:
+            continue
+        slug = re.sub(r"\s*\([^)]*\)\s*$", "", raw_model).strip()
+        if slug not in XAI_TRACKED_SLUGS or slug in by_slug:
+            continue
+        ctx = _parse_token_count(ctx_s)
+        in_p = _parse_dollar(in_s)
+        cache_p = _parse_dollar(cache_s)
+        out_p = _parse_dollar(out_s)
+        values: list[dict[str, Any]] = []
+        if ctx is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/contextTokens",
+                    "code": "contextTokens",
+                    "number": ctx,
+                    "text": None,
+                    "source": XAI_MODELS_URL,
+                    "checkedAt": today,
+                }
+            )
+        if in_p is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/inputPricePerMTok",
+                    "code": "inputPricePerMTok",
+                    "number": in_p,
+                    "text": None,
+                    "source": XAI_MODELS_URL,
+                    "checkedAt": today,
+                }
+            )
+        if cache_p is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/cachedReadPricePerMTok",
+                    "code": "cachedReadPricePerMTok",
+                    "number": cache_p,
+                    "text": None,
+                    "source": XAI_MODELS_URL,
+                    "checkedAt": today,
+                }
+            )
+        if out_p is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/outputPricePerMTok",
+                    "code": "outputPricePerMTok",
+                    "number": out_p,
+                    "text": None,
+                    "source": XAI_MODELS_URL,
+                    "checkedAt": today,
+                }
+            )
+        by_slug[slug] = {
+            "vendorId": vid,
+            "model": slug,
+            "name": NAME_OVERRIDES.get(slug, slug),
+            "efforts": list(KNOWN_EFFORTS.get(slug, [])),
+            "values": values,
+        }
+    return list(by_slug.values())
+
+
+def parse_zai_docs(pricing_md: str, glm53_md: str, today: str) -> list[dict[str, Any]]:
+    """Parse Z.ai GLM pricing and GLM-5.3 specs from official Markdown docs."""
+    vid = "zhipuai"
+    by_slug: dict[str, dict[str, Any]] = {}
+    for line in pricing_md.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip().replace("\\$", "$") for c in line.strip("|").split("|")]
+        if len(cells) != 5 or cells[0] in ("Model", ":-"):
+            continue
+        raw_name, in_s, cache_s, _, out_s = cells
+        slug = raw_name.lower()
+        if slug not in ZAI_TRACKED_SLUGS or slug in by_slug:
+            continue
+        in_p = _parse_dollar(in_s)
+        cache_p = _parse_dollar(cache_s)
+        out_p = _parse_dollar(out_s)
+        values: list[dict[str, Any]] = []
+        if slug == "glm-5.3":
+            m_ctx = re.search(r"([0-9]+[MmKk])-token context window", glm53_md)
+            m_out = re.search(r"maximum output length of\s+([0-9]+[MmKk])\s+tokens", glm53_md)
+            if m_ctx:
+                ctx_val = _parse_token_count(m_ctx.group(1) + " tokens")
+                if ctx_val:
+                    values.append(
+                        {
+                            "id": f"{vid}/{slug}/contextTokens",
+                            "code": "contextTokens",
+                            "number": ctx_val,
+                            "text": None,
+                            "source": ZAI_GLM53_URL,
+                            "checkedAt": today,
+                        }
+                    )
+            if m_out:
+                out_val = _parse_token_count(m_out.group(1) + " tokens")
+                if out_val:
+                    values.append(
+                        {
+                            "id": f"{vid}/{slug}/maxOutputTokens",
+                            "code": "maxOutputTokens",
+                            "number": out_val,
+                            "text": None,
+                            "source": ZAI_GLM53_URL,
+                            "checkedAt": today,
+                        }
+                    )
+        if in_p is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/inputPricePerMTok",
+                    "code": "inputPricePerMTok",
+                    "number": in_p,
+                    "text": None,
+                    "source": ZAI_PRICING_URL,
+                    "checkedAt": today,
+                }
+            )
+        if cache_p is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/cachedReadPricePerMTok",
+                    "code": "cachedReadPricePerMTok",
+                    "number": cache_p,
+                    "text": None,
+                    "source": ZAI_PRICING_URL,
+                    "checkedAt": today,
+                }
+            )
+        if out_p is not None:
+            values.append(
+                {
+                    "id": f"{vid}/{slug}/outputPricePerMTok",
+                    "code": "outputPricePerMTok",
+                    "number": out_p,
+                    "text": None,
+                    "source": ZAI_PRICING_URL,
+                    "checkedAt": today,
+                }
+            )
+        by_slug[slug] = {
+            "vendorId": vid,
+            "model": slug,
+            "name": raw_name,
+            "efforts": list(KNOWN_EFFORTS.get(slug, [])),
+            "values": values,
+        }
+    return list(by_slug.values())
+
+
 def _parse_html_table(table_html: str) -> list[list[str]]:
     rows: list[list[str]] = []
     for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", table_html, re.S):
@@ -637,9 +1002,7 @@ def merge_models(
     touch: bool = False,
 ) -> list[dict[str, Any]]:
     """Merge collected models with existing models, preserving checkedAt when unchanged."""
-    existing_by_key = {
-        (m["vendorId"], m["model"]): m for m in existing_models
-    }
+    existing_by_key = {(m["vendorId"], m["model"]): m for m in existing_models}
     existing_values: dict[str, dict[str, Any]] = {}
     for m in existing_models:
         for v in m["values"]:
@@ -647,7 +1010,7 @@ def merge_models(
 
     merged: dict[tuple[str, str], dict[str, Any]] = {}
 
-    # Seed from collected batches in priority order (1st-party makers first, OpenCode Go second).
+    # Seed from collected batches in priority order (1st-party makers first, OpenCode Go last).
     for batch in collected_batches:
         for m in batch:
             key = (m["vendorId"], m["model"])
@@ -741,6 +1104,26 @@ def main(argv: list[str] | None = None) -> None:
         for slug in oai_slugs
     ]
 
+    google_pricing_md = fetch_url(GOOGLE_PRICING_MD_URL)
+    google_model_mds = {
+        slug: fetch_url(f"{GOOGLE_MODELS_URL}/{slug}.md.txt")
+        for slug in GOOGLE_TRACKED_SLUGS
+    }
+    google_models = parse_google_docs(google_pricing_md, google_model_mds, today)
+    if not google_models:
+        sys.exit("Google Gemini docs parser returned 0 models; aborting")
+
+    xai_md = fetch_url(XAI_MODELS_MD_URL)
+    xai_models = parse_xai_docs(xai_md, today)
+    if not xai_models:
+        sys.exit("xAI Grok docs parser returned 0 models; aborting")
+
+    zai_pricing_md = fetch_url(ZAI_PRICING_MD_URL)
+    zai_glm53_md = fetch_url(ZAI_GLM53_MD_URL)
+    zai_models = parse_zai_docs(zai_pricing_md, zai_glm53_md, today)
+    if not zai_models:
+        sys.exit("Z.ai GLM docs parser returned 0 models; aborting")
+
     oc_html = fetch_url(OPENCODE_GO_URL)
     opencode_models = parse_opencode_go_docs(oc_html, today)
     if not opencode_models:
@@ -748,7 +1131,14 @@ def main(argv: list[str] | None = None) -> None:
 
     merged_models = merge_models(
         existing["models"],
-        [claude_models, openai_models, opencode_models],
+        [
+            claude_models,
+            openai_models,
+            google_models,
+            xai_models,
+            zai_models,
+            opencode_models,
+        ],
         today=today,
         touch=touch,
     )
@@ -766,7 +1156,9 @@ def main(argv: list[str] | None = None) -> None:
     print(
         f"model-facts.json: {len(merged_models)} models "
         f"(claude={len(claude_models)}, openai={len(openai_models)}, "
-        f"opencode-go={len(opencode_models)}, changed={changed})"
+        f"google={len(google_models)}, xai={len(xai_models)}, "
+        f"zai={len(zai_models)}, opencode-go={len(opencode_models)}, "
+        f"changed={changed})"
     )
 
 

@@ -630,6 +630,290 @@
   },
   {
    "vendorId": "google",
+   "model": "gemini-3.1-flash-lite",
+   "name": "Gemini 3.1 Flash-Lite",
+   "efforts": [],
+   "values": [
+    {
+     "id": "google/gemini-3.1-flash-lite/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.025,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-flash-lite/contextTokens",
+     "code": "contextTokens",
+     "number": 1048576,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-flash-lite/inputKinds",
+     "code": "inputKinds",
+     "number": null,
+     "text": "text,image,video,audio,pdf",
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-flash-lite/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.25,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-flash-lite/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 65536,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-flash-lite/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 1.5,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "google",
+   "model": "gemini-3.1-pro-preview",
+   "name": "Gemini 3.1 Pro preview",
+   "efforts": [],
+   "values": [
+    {
+     "id": "google/gemini-3.1-pro-preview/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.2,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-pro-preview/contextTokens",
+     "code": "contextTokens",
+     "number": 1048576,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-pro-preview/inputKinds",
+     "code": "inputKinds",
+     "number": null,
+     "text": "text,image,video,audio,pdf",
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-pro-preview/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 2,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-pro-preview/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 65536,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.1-pro-preview/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 12,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "google",
+   "model": "gemini-3.5-flash-lite",
+   "name": "Gemini 3.5 Flash-Lite",
+   "efforts": [],
+   "values": [
+    {
+     "id": "google/gemini-3.5-flash-lite/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.03,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.5-flash-lite/contextTokens",
+     "code": "contextTokens",
+     "number": 1048576,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.5-flash-lite/inputKinds",
+     "code": "inputKinds",
+     "number": null,
+     "text": "text,image,video,audio,pdf",
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.5-flash-lite/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.3,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.5-flash-lite/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 65536,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.5-flash-lite/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 2.5,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "google",
+   "model": "gemini-3.6-flash",
+   "name": "Gemini 3.6 Flash",
+   "efforts": [],
+   "values": [
+    {
+     "id": "google/gemini-3.6-flash/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.075,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.6-flash/contextTokens",
+     "code": "contextTokens",
+     "number": 1048576,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.6-flash/inputKinds",
+     "code": "inputKinds",
+     "number": null,
+     "text": "text,image,video,audio,pdf",
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.6-flash/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.75,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.6-flash/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 65536,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.6-flash/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 3.75,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "google",
+   "model": "gemini-3.8-flash",
+   "name": "Gemini 3.8 Flash",
+   "efforts": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "values": [
+    {
+     "id": "google/gemini-3.8-flash/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.075,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.8-flash/contextTokens",
+     "code": "contextTokens",
+     "number": 1048576,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.8-flash/inputKinds",
+     "code": "inputKinds",
+     "number": null,
+     "text": "text,image,video,audio,pdf",
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.8-flash/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.75,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.8-flash/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 65536,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-3.8-flash/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 3.75,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "google",
    "model": "gemini-4-argon",
    "name": "Gemini 4 Argon",
    "efforts": [
@@ -643,16 +927,40 @@
      "code": "cachedReadPricePerMTok",
      "number": 0.1,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-4-argon/contextTokens",
+     "code": "contextTokens",
+     "number": 1048576,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-4-argon/inputKinds",
+     "code": "inputKinds",
+     "number": null,
+     "text": "text,image,video,audio,pdf",
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "google/gemini-4-argon/inputPricePerMTok",
      "code": "inputPricePerMTok",
      "number": 2,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "google/gemini-4-argon/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 65536,
+     "text": null,
+     "source": "https://ai.google.dev/gemini-api/docs/models",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "google/gemini-4-argon/monthlyLimitUSD/go",
@@ -683,8 +991,8 @@
      "code": "outputPricePerMTok",
      "number": 10,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://ai.google.dev/gemini-api/docs/pricing",
+     "checkedAt": "2026-11-07"
     }
    ]
   },
@@ -804,7 +1112,13 @@
    "vendorId": "meta",
    "model": "muse-spark-1.3-contributor",
    "name": "Muse Spark 1.3 Contributor",
-   "efforts": [],
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh"
+   ],
    "values": [
     {
      "id": "meta/muse-spark-1.3-contributor/cachedReadPricePerMTok",
@@ -1827,6 +2141,135 @@
   },
   {
    "vendorId": "xai",
+   "model": "grok-4.3",
+   "name": "Grok 4.3",
+   "efforts": [],
+   "values": [
+    {
+     "id": "xai/grok-4.3/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.2,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.3/contextTokens",
+     "code": "contextTokens",
+     "number": 1000000,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.3/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 1.25,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.3/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 2.5,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "xai",
+   "model": "grok-4.5",
+   "name": "Grok 4.5",
+   "efforts": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "values": [
+    {
+     "id": "xai/grok-4.5/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.3,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.5/contextTokens",
+     "code": "contextTokens",
+     "number": 500000,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.5/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 2,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.5/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 6,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "xai",
+   "model": "grok-4.6",
+   "name": "Grok 4.6",
+   "efforts": [
+    "low",
+    "medium",
+    "high",
+    "xhigh"
+   ],
+   "values": [
+    {
+     "id": "xai/grok-4.6/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.5,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.6/contextTokens",
+     "code": "contextTokens",
+     "number": 500000,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.6/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 2,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.6/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 6,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "xai",
    "model": "grok-4.7",
    "name": "Grok 4.7",
    "efforts": [
@@ -1841,16 +2284,24 @@
      "code": "cachedReadPricePerMTok",
      "number": 0.5,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-4.7/contextTokens",
+     "code": "contextTokens",
+     "number": 500000,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "xai/grok-4.7/inputPricePerMTok",
      "code": "inputPricePerMTok",
      "number": 2,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "xai/grok-4.7/monthlyLimitUSD/go",
@@ -1881,8 +2332,48 @@
      "code": "outputPricePerMTok",
      "number": 6,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "xai",
+   "model": "grok-build-0.1",
+   "name": "Grok Build 0.1",
+   "efforts": [],
+   "values": [
+    {
+     "id": "xai/grok-build-0.1/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.2,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-build-0.1/contextTokens",
+     "code": "contextTokens",
+     "number": 256000,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-build-0.1/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 1,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "xai/grok-build-0.1/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 2,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-07"
     }
    ]
   },
@@ -2112,6 +2603,70 @@
   },
   {
    "vendorId": "zhipuai",
+   "model": "glm-5",
+   "name": "GLM-5",
+   "efforts": [],
+   "values": [
+    {
+     "id": "zhipuai/glm-5/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.2,
+     "text": null,
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "zhipuai/glm-5/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 1,
+     "text": null,
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "zhipuai/glm-5/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 3.2,
+     "text": null,
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "zhipuai",
+   "model": "glm-5.1",
+   "name": "GLM-5.1",
+   "efforts": [],
+   "values": [
+    {
+     "id": "zhipuai/glm-5.1/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.26,
+     "text": null,
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "zhipuai/glm-5.1/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 1.4,
+     "text": null,
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "zhipuai/glm-5.1/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 4.4,
+     "text": null,
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "zhipuai",
    "model": "glm-5.2",
    "name": "GLM-5.2",
    "efforts": [],
@@ -2121,16 +2676,16 @@
      "code": "cachedReadPricePerMTok",
      "number": 0.26,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "zhipuai/glm-5.2/inputPricePerMTok",
      "code": "inputPricePerMTok",
      "number": 1.4,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "zhipuai/glm-5.2/monthlyLimitUSD/go",
@@ -2161,8 +2716,8 @@
      "code": "outputPricePerMTok",
      "number": 4.4,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
     }
    ]
   },
@@ -2181,16 +2736,32 @@
      "code": "cachedReadPricePerMTok",
      "number": 0.26,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "zhipuai/glm-5.3/contextTokens",
+     "code": "contextTokens",
+     "number": 1000000,
+     "text": null,
+     "source": "https://docs.z.ai/guides/llm/glm-5.3",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "zhipuai/glm-5.3/inputPricePerMTok",
      "code": "inputPricePerMTok",
      "number": 1.4,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "zhipuai/glm-5.3/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 128000,
+     "text": null,
+     "source": "https://docs.z.ai/guides/llm/glm-5.3",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "zhipuai/glm-5.3/monthlyLimitUSD/go",
@@ -2221,8 +2792,8 @@
      "code": "outputPricePerMTok",
      "number": 4.4,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
     }
    ]
   },
@@ -2237,16 +2808,16 @@
      "code": "cachedReadPricePerMTok",
      "number": 0.03,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "zhipuai/glm-5.3-flash/inputPricePerMTok",
      "code": "inputPricePerMTok",
      "number": 0.15,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "zhipuai/glm-5.3-flash/monthlyLimitUSD/go",
@@ -2277,8 +2848,8 @@
      "code": "outputPricePerMTok",
      "number": 0.5,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://docs.z.ai/guides/overview/pricing",
+     "checkedAt": "2026-11-07"
     }
    ]
   }

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Report refresh diff summary and stale checkedAt items for model-facts.json and model-tiers.json.
+"""Report refresh diff summary, auto-merge gate status, and stale checkedAt items.
 
-Report-only: always exits 0. The refresh workflow includes the output in PR
-bodies; validate.yml runs it for visibility. Does not modify any files.
+Report-only: always exits 0. The refresh workflow includes the output in commit
+summaries, GitHub Actions step summaries, and PR bodies; validate.yml runs it
+for visibility. Does not modify any tracked files.
 
-Usage: python3 sources/check_staleness.py [--days N] [--diff-head]
+Usage: python3 sources/check_staleness.py [--days N] [--diff-head] [--gate-out PATH]
 """
 
 import argparse
@@ -30,6 +31,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--diff-head",
         action="store_true",
         help="Include a human-review summary comparing working tree files against HEAD.",
+    )
+    parser.add_argument(
+        "--gate-out",
+        type=str,
+        default=None,
+        help="Write JSON gate decision (whether single-source tier shifts require PR review).",
     )
     return parser.parse_args(argv)
 
@@ -76,6 +83,31 @@ def _load_head_json(rel_path: str) -> dict[str, Any] | None:
         return None
 
 
+def evaluate_tier_gate(
+    old_tiers: dict[str, Any] | None, new_tiers: dict[str, Any]
+) -> dict[str, Any]:
+    """Check whether any existing entry changed tier with fewer than 2 benchmark sources."""
+    if old_tiers is None:
+        return {"requires_pr": False, "single_source_tier_shifts": [], "confirmed_tier_shifts": []}
+    old_t = {(e["key"], e["effort"]): e for e in old_tiers["entries"]}
+    new_t = {(e["key"], e["effort"]): e for e in new_tiers["entries"]}
+    single_source: list[str] = []
+    confirmed: list[str] = []
+    for ident in sorted(set(old_t) & set(new_t)):
+        oe, ne = old_t[ident], new_t[ident]
+        if oe["tier"] != ne["tier"]:
+            desc = f"{ident[0]} ({ident[1]}): {oe['tier']} -> {ne['tier']}"
+            if len(ne.get("evidence") or []) >= 2:
+                confirmed.append(desc)
+            else:
+                single_source.append(desc)
+    return {
+        "requires_pr": bool(single_source),
+        "single_source_tier_shifts": single_source,
+        "confirmed_tier_shifts": confirmed,
+    }
+
+
 def summarize_diff(
     old_facts: dict[str, Any] | None,
     new_facts: dict[str, Any],
@@ -117,8 +149,11 @@ def summarize_diff(
         for ident in sorted(set(old_t) & set(new_t)):
             oe, ne = old_t[ident], new_t[ident]
             label = f"`{ident[0]}` ({ident[1]})"
+            ev_cnt = len(ne.get("evidence") or [])
             if oe["tier"] != ne["tier"]:
-                tier_shifts.append(f"  - {label}: **{oe['tier']} -> {ne['tier']}**")
+                tier_shifts.append(
+                    f"  - {label}: **{oe['tier']} -> {ne['tier']}** ({ev_cnt} benchmark sources)"
+                )
             elif oe["rank"] != ne["rank"]:
                 rank_shifts.append(
                     f"  - {label}: rank `{oe['rank']}` -> `{ne['rank']}`"
@@ -133,7 +168,7 @@ def summarize_diff(
             for k, ef in removed_t:
                 lines.append(f"- Removed entry: `{k}` ({ef})")
             if tier_shifts:
-                lines.append(f"- **Tier changes ({len(tier_shifts)}) — review required:**")
+                lines.append(f"- **Tier changes ({len(tier_shifts)}):**")
                 lines.extend(tier_shifts)
             if rank_shifts:
                 lines.append(f"- Rank changes ({len(rank_shifts)}):")
@@ -158,13 +193,15 @@ def main(argv: list[str] | None = None) -> None:
     )
     stale += stale_tier_items(tiers, today, days)
 
+    old_facts = _load_head_json("model-facts.json") if (ns.diff_head or ns.gate_out) else None
+    old_tiers = _load_head_json("model-tiers.json") if (ns.diff_head or ns.gate_out) else None
+
+    if ns.gate_out:
+        gate = evaluate_tier_gate(old_tiers, tiers)
+        Path(ns.gate_out).write_text(json.dumps(gate, indent=2) + "\n", encoding="utf-8")
+
     if ns.diff_head:
-        for line in summarize_diff(
-            _load_head_json("model-facts.json"),
-            facts,
-            _load_head_json("model-tiers.json"),
-            tiers,
-        ):
+        for line in summarize_diff(old_facts, facts, old_tiers, tiers):
             print(line)
 
     stale.sort(reverse=True)

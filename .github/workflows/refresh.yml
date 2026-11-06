@@ -4,6 +4,21 @@ on:
   schedule:
     - cron: "0 6 * * 1" # Mondays 06:00 UTC
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Apply mode: conditional (auto-commit to main unless single-source tier flip), direct (always commit to main), or pr (always open PR)"
+        required: false
+        default: "conditional"
+        type: choice
+        options:
+          - conditional
+          - direct
+          - pr
+      touch:
+        description: "Force-bump checkedAt and bundle date even if values are unchanged"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -14,6 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-python@v5
         with:
@@ -22,11 +39,28 @@ jobs:
       - name: Install validator dependency
         run: pip install jsonschema
 
-      - name: Refresh vendor facts from official docs
-        run: python sources/fetch_vendor_facts.py
+      - name: Determine whether heartbeat touch is needed (>45d since last commit)
+        id: touch_check
+        run: |
+          if [ "${{ inputs.touch }}" = "true" ]; then
+            echo "flag=--touch" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          last_ts=$(git log -1 --format=%ct HEAD)
+          now_ts=$(date +%s)
+          age_days=$(( (now_ts - last_ts) / 86400 ))
+          echo "Last commit age: ${age_days} days"
+          if [ "$age_days" -ge 45 ]; then
+            echo "flag=--touch" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Refresh AA-sourced tier entries
-        run: python sources/fetch_artificial_analysis.py
+      - name: Refresh vendor facts from official docs
+        run: python sources/fetch_vendor_facts.py ${{ steps.touch_check.outputs.flag }}
+
+      - name: Refresh benchmark-sourced tier entries
+        run: python sources/fetch_artificial_analysis.py ${{ steps.touch_check.outputs.flag }}
 
       - name: Validate refreshed data
         run: python scripts/validate.py
@@ -34,15 +68,43 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
-      - name: Build PR summary and staleness report
-        run: python sources/check_staleness.py --diff-head | tee "${{ runner.temp }}/pr-body.md"
+      - name: Build summary, staleness report, and gate decision
+        id: gate
+        run: |
+          python sources/check_staleness.py --diff-head --gate-out "${{ runner.temp }}/gate.json" | tee "${{ runner.temp }}/pr-body.md"
+          cat "${{ runner.temp }}/pr-body.md" >> "$GITHUB_STEP_SUMMARY"
+          requires_pr=$(python -c 'import json,sys; print(str(json.load(open(sys.argv[1]))["requires_pr"]).lower())' "${{ runner.temp }}/gate.json")
+          mode="${{ inputs.mode || 'conditional' }}"
+          if [ "$mode" = "pr" ]; then
+            echo "target=pr" >> "$GITHUB_OUTPUT"
+          elif [ "$mode" = "direct" ]; then
+            echo "target=main" >> "$GITHUB_OUTPUT"
+          elif [ "$requires_pr" = "true" ]; then
+            echo "target=pr" >> "$GITHUB_OUTPUT"
+          else
+            echo "target=main" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Open pull request on change
+      - name: Commit and push directly to main when safe
+        if: steps.gate.outputs.target == 'main'
+        run: |
+          if git diff --quiet model-facts.json model-tiers.json; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add model-facts.json model-tiers.json
+          git commit -m "chore: refresh model facts and tiers"
+          git push origin HEAD:main
+
+      - name: Open pull request when single-source tier shift requires review
+        if: steps.gate.outputs.target == 'pr'
         uses: peter-evans/create-pull-request@v8
         with:
           branch: refresh/model-data
           delete-branch: true
-          title: "chore: refresh model facts and tiers"
+          title: "chore: review model tier shift"
           commit-message: "chore: refresh model facts and tiers"
           body-path: ${{ runner.temp }}/pr-body.md
           add-paths: |
