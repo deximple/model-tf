@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-02",
+ "date": "2026-11-07",
  "models": [
   {
    "vendorId": "alibaba",
@@ -131,7 +131,7 @@
     {
      "id": "alibaba/qwen3.8-max/inputPricePerMTok",
      "code": "inputPricePerMTok",
-     "number": 2.0,
+     "number": 2,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -163,7 +163,7 @@
     {
      "id": "alibaba/qwen3.8-max/outputPricePerMTok",
      "code": "outputPricePerMTok",
-     "number": 6.0,
+     "number": 6,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -182,6 +182,14 @@
     "max"
    ],
    "values": [
+    {
+     "id": "claude/claude-fable-5-1/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.25,
+     "text": null,
+     "source": "https://platform.claude.com/docs/en/models/overview",
+     "checkedAt": "2026-11-07"
+    },
     {
      "id": "claude/claude-fable-5-1/comparativeLatency",
      "code": "comparativeLatency",
@@ -257,8 +265,8 @@
      "code": "cachedReadPricePerMTok",
      "number": 0.01,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://platform.claude.com/docs/en/models/overview",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "claude/claude-haiku-5-5/comparativeLatency",
@@ -355,6 +363,14 @@
    ],
    "values": [
     {
+     "id": "claude/claude-opus-5-5/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.2,
+     "text": null,
+     "source": "https://platform.claude.com/docs/en/models/overview",
+     "checkedAt": "2026-11-07"
+    },
+    {
      "id": "claude/claude-opus-5-5/comparativeLatency",
      "code": "comparativeLatency",
      "number": null,
@@ -424,6 +440,14 @@
     "max"
    ],
    "values": [
+    {
+     "id": "claude/claude-sonnet-5-5/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.1,
+     "text": null,
+     "source": "https://platform.claude.com/docs/en/models/overview",
+     "checkedAt": "2026-11-07"
+    },
     {
      "id": "claude/claude-sonnet-5-5/comparativeLatency",
      "code": "comparativeLatency",
@@ -625,7 +649,7 @@
     {
      "id": "google/gemini-4-argon/inputPricePerMTok",
      "code": "inputPricePerMTok",
-     "number": 2.0,
+     "number": 2,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -657,7 +681,7 @@
     {
      "id": "google/gemini-4-argon/outputPricePerMTok",
      "code": "outputPricePerMTok",
-     "number": 10.0,
+     "number": 10,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -993,7 +1017,7 @@
     {
      "id": "moonshotai/kimi-k2.7-code/outputPricePerMTok",
      "code": "outputPricePerMTok",
-     "number": 4.0,
+     "number": 4,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -1017,7 +1041,7 @@
     {
      "id": "moonshotai/kimi-k3/inputPricePerMTok",
      "code": "inputPricePerMTok",
-     "number": 3.0,
+     "number": 3,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -1049,7 +1073,7 @@
     {
      "id": "moonshotai/kimi-k3/outputPricePerMTok",
      "code": "outputPricePerMTok",
-     "number": 15.0,
+     "number": 15,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -1073,7 +1097,7 @@
     {
      "id": "moonshotai/kimi-k3.1-pro/inputPricePerMTok",
      "code": "inputPricePerMTok",
-     "number": 2.0,
+     "number": 2,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -1105,7 +1129,7 @@
     {
      "id": "moonshotai/kimi-k3.1-pro/outputPricePerMTok",
      "code": "outputPricePerMTok",
-     "number": 10.0,
+     "number": 10,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -1188,6 +1212,14 @@
    ],
    "values": [
     {
+     "id": "openai/gpt-6-astra/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 1,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
      "id": "openai/gpt-6-astra/contextTokens",
      "code": "contextTokens",
      "number": 1050000,
@@ -1247,8 +1279,8 @@
      "code": "cachedReadPricePerMTok",
      "number": 0.01,
      "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-02"
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "openai/gpt-6-luna/contextTokens",
@@ -1257,6 +1289,14 @@
      "text": null,
      "source": "https://developers.openai.com/api/docs/models",
      "checkedAt": "2026-11-02"
+    },
+    {
+     "id": "openai/gpt-6-luna/defaultEffort",
+     "code": "defaultEffort",
+     "number": null,
+     "text": "medium",
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "openai/gpt-6-luna/inputKinds",
@@ -1329,6 +1369,14 @@
    ],
    "values": [
     {
+     "id": "openai/gpt-6.1-sol/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.1,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
      "id": "openai/gpt-6.1-sol/codexContextTokens",
      "code": "codexContextTokens",
      "number": 500000,
@@ -1343,6 +1391,14 @@
      "text": null,
      "source": "https://developers.openai.com/api/docs/models",
      "checkedAt": "2026-11-02"
+    },
+    {
+     "id": "openai/gpt-6.1-sol/defaultEffort",
+     "code": "defaultEffort",
+     "number": null,
+     "text": "medium",
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "openai/gpt-6.1-sol/inputKinds",
@@ -1392,12 +1448,28 @@
    ],
    "values": [
     {
+     "id": "openai/gpt-6.1-terra/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.05,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-07"
+    },
+    {
      "id": "openai/gpt-6.1-terra/contextTokens",
      "code": "contextTokens",
      "number": 1050000,
      "text": null,
      "source": "https://developers.openai.com/api/docs/models",
      "checkedAt": "2026-11-02"
+    },
+    {
+     "id": "openai/gpt-6.1-terra/defaultEffort",
+     "code": "defaultEffort",
+     "number": null,
+     "text": "medium",
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-07"
     },
     {
      "id": "openai/gpt-6.1-terra/inputKinds",
@@ -1467,6 +1539,38 @@
   },
   {
    "vendorId": "opencode",
+   "model": "crouton-alpha-free",
+   "name": "Crouton Alpha Free",
+   "efforts": [],
+   "values": [
+    {
+     "id": "opencode/crouton-alpha-free/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "opencode/crouton-alpha-free/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "opencode/crouton-alpha-free/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "opencode",
    "model": "iceman-contributor-free",
    "name": "Iceman Contributor Free",
    "efforts": [],
@@ -1514,7 +1618,7 @@
     {
      "id": "stepfun/step-5-preview/inputPricePerMTok",
      "code": "inputPricePerMTok",
-     "number": 1.0,
+     "number": 1,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -1611,8 +1715,64 @@
   },
   {
    "vendorId": "tencent",
+   "model": "hy4",
+   "name": "Hy4",
+   "efforts": [],
+   "values": [
+    {
+     "id": "tencent/hy4/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.042,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "tencent/hy4/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.834,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "tencent/hy4/monthlyLimitUSD/go",
+     "code": "monthlyLimitUSD",
+     "number": 60,
+     "text": "go",
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "tencent/hy4/monthlyLimitUSD/go-plus",
+     "code": "monthlyLimitUSD",
+     "number": 240,
+     "text": "go-plus",
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "tencent/hy4/monthlyLimitUSD/go-teams",
+     "code": "monthlyLimitUSD",
+     "number": 65,
+     "text": "go-teams",
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    },
+    {
+     "id": "tencent/hy4/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 2.501,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "tencent",
    "model": "hy4-preview",
-   "name": "Hy4 preview",
+   "name": "Hy4 Preview",
    "efforts": [],
    "values": [
     {
@@ -1687,7 +1847,7 @@
     {
      "id": "xai/grok-4.7/inputPricePerMTok",
      "code": "inputPricePerMTok",
-     "number": 2.0,
+     "number": 2,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
@@ -1719,7 +1879,7 @@
     {
      "id": "xai/grok-4.7/outputPricePerMTok",
      "code": "outputPricePerMTok",
-     "number": 6.0,
+     "number": 6,
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"

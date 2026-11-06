@@ -22,23 +22,29 @@ jobs:
       - name: Install validator dependency
         run: pip install jsonschema
 
+      - name: Refresh vendor facts from official docs
+        run: python sources/fetch_vendor_facts.py
+
       - name: Refresh AA-sourced tier entries
         run: python sources/fetch_artificial_analysis.py
 
       - name: Validate refreshed data
         run: python scripts/validate.py
 
-      - name: Staleness report
-        run: python sources/check_staleness.py | tee "${{ runner.temp }}/staleness.md"
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build PR summary and staleness report
+        run: python sources/check_staleness.py --diff-head | tee "${{ runner.temp }}/pr-body.md"
 
       - name: Open pull request on change
         uses: peter-evans/create-pull-request@v8
         with:
           branch: refresh/model-data
           delete-branch: true
-          title: "chore: refresh model tiers from Artificial Analysis"
-          commit-message: "chore: refresh model tiers from Artificial Analysis"
-          body-path: ${{ runner.temp }}/staleness.md
+          title: "chore: refresh model facts and tiers"
+          commit-message: "chore: refresh model facts and tiers"
+          body-path: ${{ runner.temp }}/pr-body.md
           add-paths: |
-            model-tiers.json
             model-facts.json
+            model-tiers.json

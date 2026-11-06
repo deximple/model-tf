@@ -17,9 +17,9 @@ Three layers exist across the ecosystem; this repo owns the first two:
 - `model-facts.json` — `version: 1`, same shape as POSA's facts bundle.
 - `model-tiers.json` — `version: 1`; see `schema/` for both formats.
 - `schema/` — JSON Schemas; CI validates every change.
-- `sources/` — collectors run by the weekly refresh workflow.
+- `sources/` — automated collectors for vendor docs and Artificial Analysis.
 - `scripts/validate.py` — schema + cross-file checks (run locally too).
-- `tests/` — unit tests for schemas, validator, collector, and staleness checks.
+- `tests/` — unit tests for schemas, validator, collectors, and staleness checks.
 
 ## Conventions
 
@@ -38,21 +38,24 @@ Three layers exist across the ecosystem; this repo owns the first two:
   strengths**, and no Korean or sentence text in `value.text`.
 - Tier entries are **model × effort**. `effort: "default"` is used when the
   model's `efforts` in `model-facts.json` is empty (`[]`); otherwise `effort`
-  must be a member of the model's `efforts`. `rank` is per task axis, 1 = best.
+  must be a member of the model's `efforts`.
+- `rank` is per task axis (`simpleCoding` from AA Terminal-Bench 4.0 +
+  FrontierCode 2.0 composite; `reasoning` from AA Intelligence Index), 1 = best.
 - Evidence `kind`: `benchmark` (independent evals), `vendor` (maker claims),
   `community` (forums/social). Community evidence alone cannot set a tier.
 
 ## Updating
 
-- `refresh.yml` runs weekly (and on demand): it rewrites AA-benchmark-sourced
-  tier entries, validates the result, and opens a PR on `refresh/model-data`
-  only when data actually changes. **Tier changes are merged by human review**
-  — the PR is the approval step.
-- Fact changes are manual: verify against the maker's docs, update the value
-  and `checkedAt`, open a PR (see `sources/README.md` for the source list).
-- `validate.yml` gates every PR: JSON Schema conformance, unique/sorted keys,
-  effort ordering, `tiers.key ⊆ facts`, effort consistency between `tiers` and
-  `facts`, `factsDate == facts.date`, and the community-evidence rule.
+- `refresh.yml` runs weekly (and on demand):
+  1. `sources/fetch_vendor_facts.py` refreshes `model-facts.json` from official
+     Anthropic, OpenAI/ChatGPT, and OpenCode Go documentation (including new
+     models and price/limit changes).
+  2. `sources/fetch_artificial_analysis.py` refreshes `model-tiers.json` from
+     the Artificial Analysis leaderboard (splitting `simpleCoding` vs
+     `reasoning` ranks and auto-matching new models in `model-facts.json`).
+  3. `scripts/validate.py` and `tests/` gate the result before opening a PR on
+     `refresh/model-data` with a human-review diff summary.
+- `validate.yml` gates every push and PR.
 
 ## Compatibility
 

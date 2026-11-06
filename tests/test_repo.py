@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for model-tf schemas, validator, AA collector, and staleness checker."""
+"""Unit tests for model-tf schemas, validator, vendor facts collector, AA collector, and staleness checker."""
 
 import copy
 import sys
@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "sources"))
 
 import check_staleness  # noqa: E402
 import fetch_artificial_analysis as fetch_aa  # noqa: E402
+import fetch_vendor_facts as fetch_vf  # noqa: E402
 import jsonschema  # noqa: E402
 import validate  # noqa: E402
 
@@ -75,6 +76,35 @@ class ValidateTests(unittest.TestCase):
         self.assertTrue(any("rank keys" in e for e in errors))
 
 
+class FetchVendorFactsTests(unittest.TestCase):
+    def test_infer_maker_handles_known_and_prefix_models(self) -> None:
+        self.assertEqual(fetch_vf.infer_maker("claude-opus-5-5"), "claude")
+        self.assertEqual(fetch_vf.infer_maker("glm-5.9-future"), "zhipuai")
+        self.assertEqual(fetch_vf.infer_maker("qwen4.0-max"), "alibaba")
+        self.assertEqual(fetch_vf.infer_maker("unknown-community-free"), "opencode")
+
+    def test_parse_claude_docs_extracts_specs_and_cache_rates(self) -> None:
+        md = (
+            "All current models support text and image input.\n"
+            "| Feature | Claude Opus 5.5 |\n"
+            "| :--- | :--- |\n"
+            "| Comparative latency | Moderate |\n"
+            "| Pricing | $4 / input MTok, $20 / output MTok |\n"
+            "| Claude API ID | `claude-opus-5-5` |\n"
+            "| Default effort | `medium` |\n"
+            "| Context window | 1M tokens |\n"
+            "| Max output | 128K tokens |\n"
+            "* **Pricing:** prompt cache reads cost 10% (5% on Claude Opus 5.5).\n"
+        )
+        models = fetch_vf.parse_claude_docs(md, "`low` `medium` `high`", "2026-11-07")
+        self.assertEqual(len(models), 1)
+        vals = {v["code"]: (v["number"], v["text"]) for v in models[0]["values"]}
+        self.assertEqual(vals["contextTokens"], (1000000, None))
+        self.assertEqual(vals["inputPricePerMTok"], (4, None))
+        self.assertEqual(vals["cachedReadPricePerMTok"], (0.2, None))
+        self.assertEqual(vals["defaultEffort"], (None, "medium"))
+
+
 class FetchArtificialAnalysisTests(unittest.TestCase):
     def test_parse_name_handles_efforts_and_date_tags(self) -> None:
         self.assertEqual(
@@ -107,31 +137,68 @@ class FetchArtificialAnalysisTests(unittest.TestCase):
         self.assertEqual(ranks[("openai/gpt-6-astra", "max")], 2)
         self.assertEqual(ranks[("openai/gpt-6.1-sol", "max")], 4)
 
-    def test_build_aa_entries_preserves_checked_at_when_unchanged(self) -> None:
-        rows = [("Claude Opus 5.5 (max)", 59.0)]
-        fact_efforts = {"claude/claude-opus-5-5": ["low", "medium", "high", "xhigh", "max"]}
-        first = fetch_aa.build_aa_entries(rows, fact_efforts, "2026-11-01")
+    def test_build_aa_entries_splits_coding_and_reasoning_and_auto_matches(self) -> None:
+        rows = [
+            ("Claude Opus 5.5 (max)", 59.1, 51.0),
+            ("Claude Sonnet 5.5 (max)", 54.5, 53.0),
+            ("Brand New Model 1.0", 40.0, 45.0),
+        ]
+        facts_models = [
+            {
+                "vendorId": "claude",
+                "model": "claude-opus-5-5",
+                "name": "Claude Opus 5.5",
+                "efforts": ["low", "medium", "high", "xhigh", "max"],
+            },
+            {
+                "vendorId": "claude",
+                "model": "claude-sonnet-5-5",
+                "name": "Claude Sonnet 5.5",
+                "efforts": ["low", "medium", "high", "xhigh", "max"],
+            },
+            {
+                "vendorId": "acme",
+                "model": "brand-new-model-1.0",
+                "name": "Brand New Model 1.0",
+                "efforts": [],
+            },
+        ]
+        fact_efforts = {
+            f"{m['vendorId']}/{m['model']}": m["efforts"] for m in facts_models
+        }
+        entries = fetch_aa.build_aa_entries(
+            rows, fact_efforts, "2026-11-01", facts_models=facts_models
+        )
+        self.assertEqual(
+            entries[("claude/claude-opus-5-5", "max")]["rank"],
+            {"simpleCoding": 2, "reasoning": 1},
+        )
+        self.assertEqual(
+            entries[("claude/claude-sonnet-5-5", "max")]["rank"],
+            {"simpleCoding": 1, "reasoning": 2},
+        )
+        self.assertIn(("acme/brand-new-model-1.0", "default"), entries)
+
         second = fetch_aa.build_aa_entries(
-            rows, fact_efforts, "2026-11-08", existing_aa=first, touch=False
+            rows,
+            fact_efforts,
+            "2026-11-08",
+            existing_aa=entries,
+            touch=False,
+            facts_models=facts_models,
         )
         self.assertEqual(
             second[("claude/claude-opus-5-5", "max")]["evidence"][0]["checkedAt"],
             "2026-11-01",
         )
-        touched = fetch_aa.build_aa_entries(
-            rows, fact_efforts, "2026-11-08", existing_aa=first, touch=True
-        )
-        self.assertEqual(
-            touched[("claude/claude-opus-5-5", "max")]["evidence"][0]["checkedAt"],
-            "2026-11-08",
-        )
 
 
 class StalenessTests(unittest.TestCase):
     def test_parse_args_and_stale_detection(self) -> None:
-        self.assertEqual(check_staleness.parse_args([]), 30)
-        self.assertEqual(check_staleness.parse_args(["--days", "14"]), 14)
-        self.assertEqual(check_staleness.parse_args(["--days=7"]), 7)
+        self.assertEqual(check_staleness.parse_args([]).days, 30)
+        self.assertFalse(check_staleness.parse_args([]).diff_head)
+        self.assertEqual(check_staleness.parse_args(["--days", "14"]).days, 14)
+        self.assertTrue(check_staleness.parse_args(["--diff-head"]).diff_head)
         today = date(2026, 12, 15)
         facts = {
             "models": [

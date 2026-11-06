@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
 """Refresh AA-sourced entries in model-tiers.json from the Artificial Analysis leaderboard.
 
-Fetches https://artificialanalysis.ai/leaderboards/models, parses the model table,
-and rewrites every tiers entry whose evidence is exclusively the AA Intelligence
+Fetches https://artificialanalysis.ai/leaderboards/models, parses the embedded
+Next.js RSC model payload (falling back to the HTML table if needed), and
+rewrites every tiers entry whose evidence is exclusively the AA Intelligence
 Index benchmark. Entries with other evidence (vendor claims, community notes,
-human curation) are preserved untouched. New model x effort rows that map to a
-model in model-facts.json are appended; AA-managed entries whose row disappears
-are removed.
+human curation) are preserved untouched.
 
-If no entry's tier, rank, or score note changed and factsDate already matches
-model-facts.json, existing checkedAt and bundle date values are preserved so
-scheduled runs produce zero diff when leaderboard data has not changed. Pass
---touch to force-update checkedAt and bundle date to today.
+Axis ranking:
+  - reasoning: competition rank by Artificial Analysis Intelligence Index.
+  - simpleCoding: competition rank by AA coding composite
+    ((Terminal-Bench 4.0 + FrontierCode 2.0) / 2), falling back to Intelligence
+    Index when sub-benchmark scores are unavailable.
 
-Tier bands and rank are provisional composites of the Intelligence Index; both
-task axes currently share the same rank. Human review happens in the PR this
-script feeds (see .github/workflows/refresh.yml).
+Model matching:
+  - Uses explicit NAME_MAP aliases first, then automatic normalized matching
+    against model-facts.json (name and model id) so newly added models in
+    model-facts.json are picked up without manual mapping edits.
+
+Idempotency:
+  - If no entry's tier, rank, or score note changed and factsDate matches
+    model-facts.json, existing checkedAt and bundle date values are preserved so
+    scheduled runs produce zero diff when leaderboard data has not changed.
+    Pass --touch to force-update checkedAt and bundle date to today.
 
 Stdlib only. Run from anywhere: python3 sources/fetch_artificial_analysis.py [--touch]
 """
@@ -39,7 +46,8 @@ AA_SOURCE = AA_URL
 FRONTIER_MIN = 50
 MID_MIN = 25
 
-# AA leaderboard display name -> (vendorId, model) in model-facts.json.
+# Explicit AA leaderboard display name overrides -> (vendorId, model).
+# Models not listed here are matched automatically against model-facts.json by normalized name/id.
 NAME_MAP: dict[str, tuple[str, str]] = {
     "Claude Opus 5.5": ("claude", "claude-opus-5-5"),
     "Claude Sonnet 5.5": ("claude", "claude-sonnet-5-5"),
@@ -71,9 +79,10 @@ NAME_MAP: dict[str, tuple[str, str]] = {
     "Qwen3.7 Plus": ("alibaba", "qwen3.7-plus"),
     "DeepSeek V4.1 Flash": ("deepseek", "deepseek-v4.1-flash"),
     "DeepSeek V4 Pro": ("deepseek", "deepseek-v4-pro"),
-    "Tencent Hy4": ("tencent", "hy4-preview"),
+    "Tencent Hy4": ("tencent", "hy4"),
     "Tencent Hy3": ("tencent", "hy3"),
-    "Hy4": ("tencent", "hy4-preview"),
+    "Hy4": ("tencent", "hy4"),
+    "Hy4 Preview": ("tencent", "hy4-preview"),
     "Hy3": ("tencent", "hy3"),
 }
 
@@ -81,6 +90,7 @@ EFFORT_WORDS = {"low", "medium", "high", "xhigh", "max", "none", "non-reasoning"
 CELL_RE = re.compile(r"<t[dh][^>]*>(.*?)</t[dh]>", re.S)
 TAG_RE = re.compile(r"<[^>]+>")
 WS_RE = re.compile(r"\s+")
+NORM_RE = re.compile(r"[^a-z0-9]+")
 
 
 def fetch_leaderboard() -> str:
@@ -93,8 +103,62 @@ def _cell_text(fragment: str) -> str:
     return WS_RE.sub(" ", html.unescape(TAG_RE.sub(" ", fragment))).strip()
 
 
+def parse_rsc_models(page: str) -> list[tuple[str, float, float | None]]:
+    """Extract [(short_name, intelligence_index, coding_score)] from AA RSC payload."""
+    pushes = [
+        json.loads(f'"{m}"')
+        for m in re.findall(
+            r'self\.__next_f\.push\(\[1,"((?:\\.|[^"\\])*)"\]\)', page, re.S
+        )
+    ]
+    if not pushes:
+        return []
+    full = "".join(pushes)
+    marker = '"initialModels":['
+    idx = full.find(marker)
+    if idx == -1:
+        return []
+    start = idx + len(marker) - 1
+    depth = 0
+    end = -1
+    for i in range(start, len(full)):
+        if full[i] == "[":
+            depth += 1
+        elif full[i] == "]":
+            depth -= 1
+            if depth == 0:
+                end = i + 1
+                break
+    if end == -1:
+        return []
+    try:
+        arr = json.loads(full[start:end])
+    except json.JSONDecodeError:
+        return []
+
+    out: list[tuple[str, float, float | None]] = []
+    for item in arr:
+        ii = item.get("intelligenceIndex")
+        if ii is None:
+            continue
+        name = item.get("shortName") or item.get("name") or ""
+        if not name:
+            continue
+        scores = item.get("scores") or {}
+        tb4 = scores.get("terminalbench-4-0")
+        fc2 = scores.get("frontiercode-2-0")
+        coding = (
+            round(((float(tb4) + float(fc2)) / 2.0) * 100.0, 1)
+            if tb4 is not None and fc2 is not None
+            else None
+        )
+        out.append((name, round(float(ii), 1), coding))
+    out.sort(key=lambda r: -r[1])
+    return out
+
+
 def parse_rows(page: str) -> list[tuple[str, float]]:
-    """Return [(model_cell, score)] for every scored leaderboard row."""
+    """Return [(model_cell, score)] for every scored leaderboard row in HTML."""
     rows: list[tuple[str, float]] = []
     for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", page, re.S):
         cells = CELL_RE.findall(tr)
@@ -119,8 +183,9 @@ def parse_name(name: str) -> tuple[str, str]:
         if not m:
             break
         inner = m.group(2).strip()
-        if inner in EFFORT_WORDS:
-            effort = "none" if inner == "non-reasoning" else inner
+        lower_inner = inner.lower()
+        if lower_inner in EFFORT_WORDS:
+            effort = "none" if lower_inner == "non-reasoning" else lower_inner
             base = m.group(1).strip()
         elif re.fullmatch(r"\d{4}", inner):
             base = m.group(1).strip()
@@ -146,9 +211,10 @@ def competition_ranks(
 
 
 def tier_of(score: float) -> str:
-    if score >= FRONTIER_MIN:
+    rounded = round(score)
+    if rounded >= FRONTIER_MIN:
         return "frontier"
-    if score >= MID_MIN:
+    if rounded >= MID_MIN:
         return "mid"
     return "low"
 
@@ -166,18 +232,54 @@ def _valid_effort(effort: str, model_efforts: list[str]) -> bool:
     return effort in model_efforts
 
 
+def _norm_token(text: str) -> str:
+    return NORM_RE.sub("", text.lower())
+
+
+def build_auto_name_index(
+    facts_models: list[dict[str, Any]] | None,
+) -> dict[str, tuple[str, str]]:
+    """Build normalized-name -> (vendorId, model) lookup from model-facts.json."""
+    idx: dict[str, tuple[str, str]] = {}
+    if not facts_models:
+        return idx
+    for m in facts_models:
+        vid, mid, name = m["vendorId"], m["model"], m.get("name", "")
+        for candidate in (name, mid, f"{vid} {name}", f"{vid} {mid}"):
+            norm = _norm_token(candidate)
+            if norm:
+                idx.setdefault(norm, (vid, mid))
+    return idx
+
+
+def resolve_model(
+    base: str, auto_index: dict[str, tuple[str, str]]
+) -> tuple[str, str] | None:
+    hit = NAME_MAP.get(base)
+    if hit:
+        return hit
+    return auto_index.get(_norm_token(base))
+
+
 def build_aa_entries(
-    rows: list[tuple[str, float]],
+    rows: list[tuple[str, float]] | list[tuple[str, float, float | None]],
     fact_efforts: dict[str, list[str]],
     today: str,
     existing_aa: dict[tuple[str, str], dict[str, Any]] | None = None,
     touch: bool = False,
+    facts_models: list[dict[str, Any]] | None = None,
 ) -> dict[tuple[str, str], dict[str, Any]]:
-    matched: list[tuple[tuple[str, str], float]] = []
+    auto_index = build_auto_name_index(facts_models)
+    matched: list[tuple[tuple[str, str], float, float | None]] = []
     seen: set[tuple[str, str]] = set()
-    for name, score in rows:
+    for row in rows:
+        name = row[0]
+        score = float(row[1])
+        coding_score: float | None = (
+            float(row[2]) if len(row) > 2 and row[2] is not None else None
+        )
         base, effort = parse_name(name)
-        hit = NAME_MAP.get(base)
+        hit = resolve_model(base, auto_index)
         if not hit:
             continue
         vid, mid = hit
@@ -190,19 +292,28 @@ def build_aa_entries(
         if ident in seen:
             continue
         seen.add(ident)
-        matched.append((ident, score))
+        matched.append((ident, score, coding_score))
 
-    ranks = competition_ranks(matched)
+    r_ranks = competition_ranks([(ident, s) for ident, s, _ in matched])
+    c_ranks = competition_ranks(
+        [(ident, c if c is not None else s) for ident, s, c in matched]
+    )
     existing = existing_aa or {}
     entries: dict[tuple[str, str], dict[str, Any]] = {}
-    for ident, score in matched:
+    for ident, score, coding_score in matched:
         key, effort = ident
         tier = tier_of(score)
-        rank = {"simpleCoding": ranks[ident], "reasoning": ranks[ident]}
-        note = (
-            f"Artificial Analysis Intelligence Index {score:g} "
-            "(composite; axis ranks provisional)"
-        )
+        rank = {"simpleCoding": c_ranks[ident], "reasoning": r_ranks[ident]}
+        if coding_score is not None:
+            note = (
+                f"Artificial Analysis Intelligence Index {score:g}, "
+                f"Coding (Terminal-Bench 4.0 + FrontierCode 2.0) {coding_score:g}"
+            )
+        else:
+            note = (
+                f"Artificial Analysis Intelligence Index {score:g} "
+                "(composite; axis ranks provisional)"
+            )
         checked_at = today
         prev = existing.get(ident)
         if (
@@ -243,7 +354,10 @@ def main(argv: list[str] | None = None) -> None:
     today = date.today().isoformat()
 
     page = fetch_leaderboard()
-    rows = parse_rows(page)
+    rsc_rows = parse_rsc_models(page)
+    rows: list[tuple[str, float]] | list[tuple[str, float, float | None]] = (
+        rsc_rows if rsc_rows else parse_rows(page)
+    )
     if not rows:
         sys.exit("no leaderboard rows parsed; aborting without changes")
 
@@ -251,7 +365,12 @@ def main(argv: list[str] | None = None) -> None:
         (e["key"], e["effort"]): e for e in tiers["entries"] if is_aa_managed(e)
     }
     aa_entries = build_aa_entries(
-        rows, fact_efforts, today, existing_aa=existing_aa, touch=touch
+        rows,
+        fact_efforts,
+        today,
+        existing_aa=existing_aa,
+        touch=touch,
+        facts_models=facts["models"],
     )
 
     preserved = [e for e in tiers["entries"] if not is_aa_managed(e)]
@@ -274,7 +393,8 @@ def main(argv: list[str] | None = None) -> None:
     )
     print(
         f"model-tiers.json: {len(preserved)} preserved + "
-        f"{len(regenerated)} AA-managed = {len(merged)} entries"
+        f"{len(regenerated)} AA-managed = {len(merged)} entries "
+        f"(source={'rsc' if rsc_rows else 'html'}, changed={changed})"
     )
 
 
