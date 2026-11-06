@@ -1,7 +1,7 @@
 {
  "version": 1,
  "date": "2026-11-07",
- "factsDate": "2026-11-07",
+ "factsDate": "2026-11-02",
  "axis": [
   "simpleCoding",
   "reasoning"
@@ -12,8 +12,8 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 41,
-    "reasoning": 41
+    "simpleCoding": 35,
+    "reasoning": 35
    },
    "evidence": [
     {
@@ -29,8 +29,8 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 22,
-    "reasoning": 22
+    "simpleCoding": 18,
+    "reasoning": 18
    },
    "evidence": [
     {
@@ -46,8 +46,8 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 32,
-    "reasoning": 32
+    "simpleCoding": 26,
+    "reasoning": 26
    },
    "evidence": [
     {
@@ -63,8 +63,8 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 20,
-    "reasoning": 20
+    "simpleCoding": 16,
+    "reasoning": 16
    },
    "evidence": [
     {
@@ -80,8 +80,8 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 27,
-    "reasoning": 27
+    "simpleCoding": 22,
+    "reasoning": 22
    },
    "evidence": [
     {
@@ -97,8 +97,8 @@
    "effort": "xhigh",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 15,
-    "reasoning": 15
+    "simpleCoding": 12,
+    "reasoning": 12
    },
    "evidence": [
     {
@@ -114,8 +114,8 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 49,
-    "reasoning": 49
+    "simpleCoding": 41,
+    "reasoning": 41
    },
    "evidence": [
     {
@@ -131,8 +131,8 @@
    "effort": "low",
    "tier": "low",
    "rank": {
-    "simpleCoding": 72,
-    "reasoning": 72
+    "simpleCoding": 56,
+    "reasoning": 56
    },
    "evidence": [
     {
@@ -148,8 +148,8 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 34,
-    "reasoning": 34
+    "simpleCoding": 28,
+    "reasoning": 28
    },
    "evidence": [
     {
@@ -165,8 +165,8 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 62,
-    "reasoning": 62
+    "simpleCoding": 51,
+    "reasoning": 51
    },
    "evidence": [
     {
@@ -182,8 +182,8 @@
    "effort": "xhigh",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 35,
-    "reasoning": 35
+    "simpleCoding": 29,
+    "reasoning": 29
    },
    "evidence": [
     {
@@ -199,8 +199,8 @@
    "effort": "high",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 11,
-    "reasoning": 11
+    "simpleCoding": 8,
+    "reasoning": 8
    },
    "evidence": [
     {
@@ -216,8 +216,8 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 35,
-    "reasoning": 35
+    "simpleCoding": 29,
+    "reasoning": 29
    },
    "evidence": [
     {
@@ -233,8 +233,8 @@
    "effort": "max",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 2,
-    "reasoning": 2
+    "simpleCoding": 1,
+    "reasoning": 1
    },
    "evidence": [
     {
@@ -250,8 +250,8 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 21,
-    "reasoning": 21
+    "simpleCoding": 17,
+    "reasoning": 17
    },
    "evidence": [
     {
@@ -267,8 +267,8 @@
    "effort": "xhigh",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 4,
-    "reasoning": 4
+    "simpleCoding": 2,
+    "reasoning": 2
    },
    "evidence": [
     {
@@ -284,8 +284,8 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 29,
-    "reasoning": 29
+    "simpleCoding": 24,
+    "reasoning": 24
    },
    "evidence": [
     {
@@ -301,8 +301,8 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 60,
-    "reasoning": 60
+    "simpleCoding": 50,
+    "reasoning": 50
    },
    "evidence": [
     {
@@ -318,8 +318,8 @@
    "effort": "max",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 6,
-    "reasoning": 6
+    "simpleCoding": 4,
+    "reasoning": 4
    },
    "evidence": [
     {
@@ -335,8 +335,8 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 44,
-    "reasoning": 44
+    "simpleCoding": 38,
+    "reasoning": 38
    },
    "evidence": [
     {
@@ -352,8 +352,8 @@
    "effort": "xhigh",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 15,
-    "reasoning": 15
+    "simpleCoding": 12,
+    "reasoning": 12
    },
    "evidence": [
     {
@@ -369,8 +369,8 @@
    "effort": "max",
    "tier": "low",
    "rank": {
-    "simpleCoding": 64,
-    "reasoning": 64
+    "simpleCoding": 52,
+    "reasoning": 52
    },
    "evidence": [
     {
@@ -386,8 +386,8 @@
    "effort": "none",
    "tier": "low",
    "rank": {
-    "simpleCoding": 81,
-    "reasoning": 81
+    "simpleCoding": 60,
+    "reasoning": 60
    },
    "evidence": [
     {
@@ -403,8 +403,8 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 53,
-    "reasoning": 53
+    "simpleCoding": 43,
+    "reasoning": 43
    },
    "evidence": [
     {
@@ -420,8 +420,8 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 42,
-    "reasoning": 42
+    "simpleCoding": 36,
+    "reasoning": 36
    },
    "evidence": [
     {
@@ -437,8 +437,8 @@
    "effort": "none",
    "tier": "low",
    "rank": {
-    "simpleCoding": 72,
-    "reasoning": 72
+    "simpleCoding": 56,
+    "reasoning": 56
    },
    "evidence": [
     {
@@ -454,8 +454,8 @@
    "effort": "high",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 15,
-    "reasoning": 15
+    "simpleCoding": 12,
+    "reasoning": 12
    },
    "evidence": [
     {
@@ -471,8 +471,8 @@
    "effort": "default",
    "tier": "low",
    "rank": {
-    "simpleCoding": 72,
-    "reasoning": 72
+    "simpleCoding": 56,
+    "reasoning": 56
    },
    "evidence": [
     {
@@ -488,8 +488,8 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 53,
-    "reasoning": 53
+    "simpleCoding": 43,
+    "reasoning": 43
    },
    "evidence": [
     {
@@ -505,8 +505,8 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 23,
-    "reasoning": 23
+    "simpleCoding": 19,
+    "reasoning": 19
    },
    "evidence": [
     {
@@ -522,8 +522,8 @@
    "effort": "high",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 6,
-    "reasoning": 6
+    "simpleCoding": 4,
+    "reasoning": 4
    },
    "evidence": [
     {
@@ -539,8 +539,8 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 27,
-    "reasoning": 27
+    "simpleCoding": 22,
+    "reasoning": 22
    },
    "evidence": [
     {
@@ -556,8 +556,8 @@
    "effort": "max",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 4,
-    "reasoning": 4
+    "simpleCoding": 2,
+    "reasoning": 2
    },
    "evidence": [
     {
@@ -573,8 +573,8 @@
    "effort": "medium",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 11,
-    "reasoning": 11
+    "simpleCoding": 8,
+    "reasoning": 8
    },
    "evidence": [
     {
@@ -590,8 +590,8 @@
    "effort": "xhigh",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 6,
-    "reasoning": 6
+    "simpleCoding": 4,
+    "reasoning": 4
    },
    "evidence": [
     {
@@ -607,8 +607,8 @@
    "effort": "high",
    "tier": "low",
    "rank": {
-    "simpleCoding": 69,
-    "reasoning": 69
+    "simpleCoding": 55,
+    "reasoning": 55
    },
    "evidence": [
     {
@@ -624,8 +624,8 @@
    "effort": "low",
    "tier": "low",
    "rank": {
-    "simpleCoding": 86,
-    "reasoning": 86
+    "simpleCoding": 61,
+    "reasoning": 61
    },
    "evidence": [
     {
@@ -641,8 +641,8 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 57,
-    "reasoning": 57
+    "simpleCoding": 47,
+    "reasoning": 47
    },
    "evidence": [
     {
@@ -658,8 +658,8 @@
    "effort": "medium",
    "tier": "low",
    "rank": {
-    "simpleCoding": 75,
-    "reasoning": 75
+    "simpleCoding": 59,
+    "reasoning": 59
    },
    "evidence": [
     {
@@ -675,8 +675,8 @@
    "effort": "none",
    "tier": "low",
    "rank": {
-    "simpleCoding": 88,
-    "reasoning": 88
+    "simpleCoding": 62,
+    "reasoning": 62
    },
    "evidence": [
     {
@@ -692,8 +692,8 @@
    "effort": "xhigh",
    "tier": "low",
    "rank": {
-    "simpleCoding": 64,
-    "reasoning": 64
+    "simpleCoding": 52,
+    "reasoning": 52
    },
    "evidence": [
     {
@@ -709,8 +709,8 @@
    "effort": "high",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 15,
-    "reasoning": 15
+    "simpleCoding": 12,
+    "reasoning": 12
    },
    "evidence": [
     {
@@ -726,8 +726,8 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 35,
-    "reasoning": 35
+    "simpleCoding": 29,
+    "reasoning": 29
    },
    "evidence": [
     {
@@ -743,8 +743,8 @@
    "effort": "max",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 6,
-    "reasoning": 6
+    "simpleCoding": 4,
+    "reasoning": 4
    },
    "evidence": [
     {
@@ -760,8 +760,8 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 23,
-    "reasoning": 23
+    "simpleCoding": 19,
+    "reasoning": 19
    },
    "evidence": [
     {
@@ -777,8 +777,8 @@
    "effort": "xhigh",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 11,
-    "reasoning": 11
+    "simpleCoding": 8,
+    "reasoning": 8
    },
    "evidence": [
     {
@@ -794,8 +794,8 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 29,
-    "reasoning": 29
+    "simpleCoding": 24,
+    "reasoning": 24
    },
    "evidence": [
     {
@@ -811,8 +811,8 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 53,
-    "reasoning": 53
+    "simpleCoding": 43,
+    "reasoning": 43
    },
    "evidence": [
     {
@@ -828,8 +828,8 @@
    "effort": "max",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 14,
-    "reasoning": 14
+    "simpleCoding": 11,
+    "reasoning": 11
    },
    "evidence": [
     {
@@ -845,8 +845,8 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 33,
-    "reasoning": 33
+    "simpleCoding": 27,
+    "reasoning": 27
    },
    "evidence": [
     {
@@ -862,8 +862,8 @@
    "effort": "none",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 44,
-    "reasoning": 44
+    "simpleCoding": 38,
+    "reasoning": 38
    },
    "evidence": [
     {
@@ -879,8 +879,8 @@
    "effort": "xhigh",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 25,
-    "reasoning": 25
+    "simpleCoding": 21,
+    "reasoning": 21
    },
    "evidence": [
     {
@@ -896,8 +896,8 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 53,
-    "reasoning": 53
+    "simpleCoding": 43,
+    "reasoning": 43
    },
    "evidence": [
     {
@@ -913,8 +913,8 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 35,
-    "reasoning": 35
+    "simpleCoding": 29,
+    "reasoning": 29
    },
    "evidence": [
     {
@@ -930,8 +930,8 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 35,
-    "reasoning": 35
+    "simpleCoding": 29,
+    "reasoning": 29
    },
    "evidence": [
     {
@@ -947,8 +947,8 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 44,
-    "reasoning": 44
+    "simpleCoding": 38,
+    "reasoning": 38
    },
    "evidence": [
     {
@@ -964,8 +964,8 @@
    "effort": "xhigh",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 35,
-    "reasoning": 35
+    "simpleCoding": 29,
+    "reasoning": 29
    },
    "evidence": [
     {
@@ -981,8 +981,8 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 59,
-    "reasoning": 59
+    "simpleCoding": 49,
+    "reasoning": 49
    },
    "evidence": [
     {
@@ -998,8 +998,8 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 49,
-    "reasoning": 49
+    "simpleCoding": 41,
+    "reasoning": 41
    },
    "evidence": [
     {
@@ -1015,8 +1015,8 @@
    "effort": "low",
    "tier": "low",
    "rank": {
-    "simpleCoding": 64,
-    "reasoning": 64
+    "simpleCoding": 52,
+    "reasoning": 52
    },
    "evidence": [
     {
@@ -1032,8 +1032,8 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 43,
-    "reasoning": 43
+    "simpleCoding": 37,
+    "reasoning": 37
    },
    "evidence": [
     {
@@ -1049,8 +1049,8 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 57,
-    "reasoning": 57
+    "simpleCoding": 47,
+    "reasoning": 47
    },
    "evidence": [
     {

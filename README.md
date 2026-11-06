@@ -19,6 +19,7 @@ Three layers exist across the ecosystem; this repo owns the first two:
 - `schema/` — JSON Schemas; CI validates every change.
 - `sources/` — collectors run by the weekly refresh workflow.
 - `scripts/validate.py` — schema + cross-file checks (run locally too).
+- `tests/` — unit tests for schemas, validator, collector, and staleness checks.
 
 ## Conventions
 
@@ -31,25 +32,27 @@ Three layers exist across the ecosystem; this repo owns the first two:
   community models).
 - **Model key** = `vendorId/model`. **Value id** = `vendorId/model/code`,
   optionally suffixed with a plan qualifier (e.g. `monthlyLimitUSD/go`).
-- Every fact value carries `source` (URL) and `checkedAt` (date). Unknown
-  `code` values are ignored by consumers.
+- Every fact value carries `source` (`https://` URL) and `checkedAt` (date).
+  Unknown `code` values are ignored by consumers.
 - Facts hold specs and prices only — **no rankings, recommendations, or
-  strengths**.
-- Tier entries are **model × effort**. `effort: "default"` marks models with a
-  single configuration. `rank` is per task axis, 1 = best.
+  strengths**, and no Korean or sentence text in `value.text`.
+- Tier entries are **model × effort**. `effort: "default"` is used when the
+  model's `efforts` in `model-facts.json` is empty (`[]`); otherwise `effort`
+  must be a member of the model's `efforts`. `rank` is per task axis, 1 = best.
 - Evidence `kind`: `benchmark` (independent evals), `vendor` (maker claims),
   `community` (forums/social). Community evidence alone cannot set a tier.
 
 ## Updating
 
 - `refresh.yml` runs weekly (and on demand): it rewrites AA-benchmark-sourced
-  tier entries and opens a PR on `refresh/model-data`. **Tier changes are
-  merged by human review** — the PR is the approval step.
+  tier entries, validates the result, and opens a PR on `refresh/model-data`
+  only when data actually changes. **Tier changes are merged by human review**
+  — the PR is the approval step.
 - Fact changes are manual: verify against the maker's docs, update the value
   and `checkedAt`, open a PR (see `sources/README.md` for the source list).
-- `validate.yml` gates every PR: JSON Schema conformance, unique keys,
-  `tiers.key ⊆ facts`, `factsDate == facts.date`, and the community-evidence
-  rule.
+- `validate.yml` gates every PR: JSON Schema conformance, unique/sorted keys,
+  effort ordering, `tiers.key ⊆ facts`, effort consistency between `tiers` and
+  `facts`, `factsDate == facts.date`, and the community-evidence rule.
 
 ## Compatibility
 

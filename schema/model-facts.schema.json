@@ -31,7 +31,7 @@
         },
         "model": {
           "type": "string",
-          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9._-]*$",
           "description": "The maker's model id."
         },
         "name": {
@@ -41,7 +41,7 @@
         },
         "efforts": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": { "type": "string", "pattern": "^\\S+$" },
           "uniqueItems": true,
           "description": "Reasoning effort levels, ordered low to high. Empty means the model has no effort choice."
         },
@@ -55,15 +55,19 @@
       "type": "object",
       "required": ["id", "code", "number", "text", "source", "checkedAt"],
       "additionalProperties": false,
+      "anyOf": [
+        { "properties": { "number": { "type": "number" } } },
+        { "properties": { "text": { "type": "string" } } }
+      ],
       "properties": {
         "id": {
           "type": "string",
-          "minLength": 1,
+          "pattern": "^\\S+$",
           "description": "vendorId/model/code, optionally suffixed with a plan qualifier (e.g. monthlyLimitUSD/go)."
         },
         "code": {
           "type": "string",
-          "minLength": 1,
+          "pattern": "^[a-zA-Z][a-zA-Z0-9]*$",
           "description": "Fact code. Consumers ignore unknown codes."
         },
         "number": {
@@ -72,12 +76,14 @@
         },
         "text": {
           "type": ["string", "null"],
-          "description": "Text value (vendor-written names, plan qualifiers), or null when numeric."
+          "pattern": "^\\S+$",
+          "description": "Text value (vendor-written names, plan qualifiers without spaces), or null when numeric."
         },
         "source": {
           "type": "string",
           "format": "uri",
-          "description": "URL the value was checked against."
+          "pattern": "^https://\\S+$",
+          "description": "HTTPS URL the value was checked against."
         },
         "checkedAt": {
           "type": "string",

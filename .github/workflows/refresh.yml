@@ -19,11 +19,17 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install validator dependency
+        run: pip install jsonschema
+
       - name: Refresh AA-sourced tier entries
         run: python sources/fetch_artificial_analysis.py
 
+      - name: Validate refreshed data
+        run: python scripts/validate.py
+
       - name: Staleness report
-        run: python sources/check_staleness.py | tee staleness.md
+        run: python sources/check_staleness.py | tee "${{ runner.temp }}/staleness.md"
 
       - name: Open pull request on change
         uses: peter-evans/create-pull-request@v8
@@ -32,7 +38,7 @@ jobs:
           delete-branch: true
           title: "chore: refresh model tiers from Artificial Analysis"
           commit-message: "chore: refresh model tiers from Artificial Analysis"
-          body-path: staleness.md
+          body-path: ${{ runner.temp }}/staleness.md
           add-paths: |
             model-tiers.json
             model-facts.json

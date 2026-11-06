@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-07",
+ "date": "2026-11-02",
  "models": [
   {
    "vendorId": "alibaba",
@@ -62,11 +62,7 @@
    "vendorId": "alibaba",
    "model": "qwen3.8-flash",
    "name": "Qwen3.8 Flash",
-   "efforts": [
-    "low",
-    "medium",
-    "xhigh"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "alibaba/qwen3.8-flash/cachedReadPricePerMTok",
@@ -122,11 +118,7 @@
    "vendorId": "alibaba",
    "model": "qwen3.8-max",
    "name": "Qwen3.8 Max",
-   "efforts": [
-    "low",
-    "medium",
-    "xhigh"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "alibaba/qwen3.8-max/cachedReadPricePerMTok",
@@ -495,6 +487,8 @@
    "model": "deepseek-v4-pro",
    "name": "DeepSeek V4 Pro",
    "efforts": [
+    "none",
+    "low",
     "high",
     "max"
    ],
@@ -554,6 +548,7 @@
    "model": "deepseek-v4.1-flash",
    "name": "DeepSeek V4.1 Flash",
    "efforts": [
+    "none",
     "low",
     "high",
     "max"
@@ -729,13 +724,7 @@
    "vendorId": "meta",
    "model": "muse-spark-1.2-contributor",
    "name": "Muse Spark 1.2 Contributor",
-   "efforts": [
-    "minimal",
-    "low",
-    "medium",
-    "high",
-    "xhigh"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "meta/muse-spark-1.2-contributor/cachedReadPricePerMTok",
@@ -791,13 +780,7 @@
    "vendorId": "meta",
    "model": "muse-spark-1.3-contributor",
    "name": "Muse Spark 1.3 Contributor",
-   "efforts": [
-    "minimal",
-    "low",
-    "medium",
-    "high",
-    "xhigh"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "meta/muse-spark-1.3-contributor/cachedReadPricePerMTok",
@@ -852,7 +835,7 @@
   {
    "vendorId": "minimax",
    "model": "minimax-m3",
-   "name": "MiniMax-M3",
+   "name": "MiniMax M3",
    "efforts": [],
    "values": [
     {
@@ -909,13 +892,7 @@
    "vendorId": "minimax",
    "model": "minimax-m3.1-flash",
    "name": "MiniMax M3.1 Flash",
-   "efforts": [
-    "low",
-    "medium",
-    "high",
-    "xhigh",
-    "max"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "minimax/minimax-m3.1-flash/cachedReadPricePerMTok",
@@ -1027,9 +1004,7 @@
    "vendorId": "moonshotai",
    "model": "kimi-k3",
    "name": "Kimi K3",
-   "efforts": [
-    "max"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "moonshotai/kimi-k3/cachedReadPricePerMTok",
@@ -1085,11 +1060,7 @@
    "vendorId": "moonshotai",
    "model": "kimi-k3.1-pro",
    "name": "Kimi K3.1 Pro",
-   "efforts": [
-    "low",
-    "high",
-    "max"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "moonshotai/kimi-k3.1-pro/cachedReadPricePerMTok",
@@ -1466,13 +1437,7 @@
    "vendorId": "opencode",
    "model": "beam-free",
    "name": "Beam Free",
-   "efforts": [
-    "low",
-    "medium",
-    "high",
-    "xhigh",
-    "max"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "opencode/beam-free/cachedReadPricePerMTok",
@@ -1536,11 +1501,7 @@
    "vendorId": "stepfun",
    "model": "step-5-preview",
    "name": "Step 5 Preview",
-   "efforts": [
-    "low",
-    "medium",
-    "high"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "stepfun/step-5-preview/cachedReadPricePerMTok",
@@ -1596,11 +1557,7 @@
    "vendorId": "tencent",
    "model": "hy3",
    "name": "Hy3",
-   "efforts": [
-    "none",
-    "low",
-    "high"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "tencent/hy3/cachedReadPricePerMTok",
@@ -1656,10 +1613,7 @@
    "vendorId": "tencent",
    "model": "hy4-preview",
    "name": "Hy4 preview",
-   "efforts": [
-    "none",
-    "high"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "tencent/hy4-preview/cachedReadPricePerMTok",
@@ -1775,7 +1729,7 @@
   {
    "vendorId": "xiaomi",
    "model": "mimo-v2.5",
-   "name": "MiMo V2.5",
+   "name": "MiMo-V2.5",
    "efforts": [],
    "values": [
     {
@@ -1831,7 +1785,7 @@
   {
    "vendorId": "xiaomi",
    "model": "mimo-v2.5-pro",
-   "name": "MiMo V2.5 Pro",
+   "name": "MiMo-V2.5-Pro",
    "efforts": [],
    "values": [
     {
@@ -2000,10 +1954,7 @@
    "vendorId": "zhipuai",
    "model": "glm-5.2",
    "name": "GLM-5.2",
-   "efforts": [
-    "high",
-    "max"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "zhipuai/glm-5.2/cachedReadPricePerMTok",
@@ -2119,11 +2070,7 @@
    "vendorId": "zhipuai",
    "model": "glm-5.3-flash",
    "name": "GLM-5.3-Flash",
-   "efforts": [
-    "low",
-    "high",
-    "max"
-   ],
+   "efforts": [],
    "values": [
     {
      "id": "zhipuai/glm-5.3-flash/cachedReadPricePerMTok",

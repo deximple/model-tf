@@ -7,6 +7,7 @@ bodies; validate.yml may run it for visibility. Does not modify any files.
 Usage: python3 sources/check_staleness.py [--days N]   (default 30)
 """
 
+import argparse
 import json
 import sys
 from datetime import date
@@ -17,10 +18,14 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def parse_args(argv: list[str]) -> int:
-    days = 30
-    if "--days" in argv:
-        days = int(argv[argv.index("--days") + 1])
-    return days
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--days",
+        type=int,
+        default=30,
+        help="Age threshold in days before a checkedAt date is reported as stale (default: 30).",
+    )
+    return parser.parse_args(argv).days
 
 
 def age_days(checked_at: str, today: date) -> int | None:
@@ -52,8 +57,8 @@ def stale_tier_items(tiers: dict[str, Any], today: date, days: int) -> list[tupl
     return stale
 
 
-def main() -> None:
-    days = parse_args(sys.argv[1:])
+def main(argv: list[str] | None = None) -> None:
+    days = parse_args(argv if argv is not None else sys.argv[1:])
     today = date.today()
     stale: list[tuple[int, str]] = []
 

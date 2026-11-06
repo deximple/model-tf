@@ -13,15 +13,21 @@ a pull request when they change anything; nothing is pushed to `main` directly.
 
 `fetch_artificial_analysis.py` rewrites only entries whose evidence is
 exclusively the AA Intelligence Index benchmark. Entries carrying vendor or
-community evidence, or hand-written notes, are preserved. Tier bands
-(`FRONTIER_MIN = 50`, `MID_MIN = 25`) and the shared composite rank are
-provisional; adjust them in the script and let the PR review settle the result.
+community evidence, or hand-written notes, are preserved. If no entry's tier,
+rank, or score note changed and `factsDate` matches `model-facts.json`,
+existing `checkedAt` and bundle `date` values are kept so scheduled runs do not
+open no-op PRs. Pass `--touch` to force-bump `checkedAt` and `date` to today.
+
+Tier bands (`FRONTIER_MIN = 50`, `MID_MIN = 25`) and the shared composite
+competition rank (1..N across tracked setups) are provisional; adjust them in
+the script and let the PR review settle the result.
 
 Run locally:
 
 ```sh
-python3 sources/fetch_artificial_analysis.py   # rewrites model-tiers.json
-python3 sources/check_staleness.py             # prints stale checkedAt items
+python3 sources/fetch_artificial_analysis.py           # rewrites model-tiers.json on change
+python3 sources/fetch_artificial_analysis.py --touch   # force-bump checkedAt and date
+python3 sources/check_staleness.py --days 30           # prints stale checkedAt items
 ```
 
 ## Manual sources

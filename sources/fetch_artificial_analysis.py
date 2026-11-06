@@ -8,11 +8,16 @@ human curation) are preserved untouched. New model x effort rows that map to a
 model in model-facts.json are appended; AA-managed entries whose row disappears
 are removed.
 
+If no entry's tier, rank, or score note changed and factsDate already matches
+model-facts.json, existing checkedAt and bundle date values are preserved so
+scheduled runs produce zero diff when leaderboard data has not changed. Pass
+--touch to force-update checkedAt and bundle date to today.
+
 Tier bands and rank are provisional composites of the Intelligence Index; both
 task axes currently share the same rank. Human review happens in the PR this
 script feeds (see .github/workflows/refresh.yml).
 
-Stdlib only. Run from anywhere: python3 sources/fetch_artificial_analysis.py
+Stdlib only. Run from anywhere: python3 sources/fetch_artificial_analysis.py [--touch]
 """
 
 import html
@@ -124,17 +129,19 @@ def parse_name(name: str) -> tuple[str, str]:
     return re.sub(r"\s+\d{4}$", "", base), effort
 
 
-def dense_ranks(scored_rows: list[tuple[str, float]]) -> dict[str, int]:
-    """Dense rank 1,2,2,3... over (name, score) sorted by score descending."""
-    ordered = sorted(scored_rows, key=lambda item: -item[1])
-    ranks: dict[str, int] = {}
+def competition_ranks(
+    scored_items: list[tuple[tuple[str, str], float]]
+) -> dict[tuple[str, str], int]:
+    """Standard competition rank 1,2,2,4... over ((key, effort), score) sorted descending."""
+    ordered = sorted(scored_items, key=lambda item: (-item[1], item[0][0], item[0][1]))
+    ranks: dict[tuple[str, str], int] = {}
     prev_score: float | None = None
     rank = 0
-    for i, (name, score) in enumerate(ordered):
+    for i, (ident, score) in enumerate(ordered):
         if score != prev_score:
             rank = i + 1
             prev_score = score
-        ranks[name] = rank
+        ranks[ident] = rank
     return ranks
 
 
@@ -153,11 +160,21 @@ def is_aa_managed(entry: dict[str, Any]) -> bool:
     )
 
 
+def _valid_effort(effort: str, model_efforts: list[str]) -> bool:
+    if not model_efforts:
+        return effort == "default"
+    return effort in model_efforts
+
+
 def build_aa_entries(
-    rows: list[tuple[str, float]], fact_keys: set[str], today: str
+    rows: list[tuple[str, float]],
+    fact_efforts: dict[str, list[str]],
+    today: str,
+    existing_aa: dict[tuple[str, str], dict[str, Any]] | None = None,
+    touch: bool = False,
 ) -> dict[tuple[str, str], dict[str, Any]]:
-    ranks = dense_ranks(rows)
-    entries: dict[tuple[str, str], dict[str, Any]] = {}
+    matched: list[tuple[tuple[str, str], float]] = []
+    seen: set[tuple[str, str]] = set()
     for name, score in rows:
         base, effort = parse_name(name)
         hit = NAME_MAP.get(base)
@@ -165,46 +182,90 @@ def build_aa_entries(
             continue
         vid, mid = hit
         key = f"{vid}/{mid}"
-        if key not in fact_keys:
+        if key not in fact_efforts:
             continue
-        entries[(key, effort)] = {
+        if not _valid_effort(effort, fact_efforts[key]):
+            continue
+        ident = (key, effort)
+        if ident in seen:
+            continue
+        seen.add(ident)
+        matched.append((ident, score))
+
+    ranks = competition_ranks(matched)
+    existing = existing_aa or {}
+    entries: dict[tuple[str, str], dict[str, Any]] = {}
+    for ident, score in matched:
+        key, effort = ident
+        tier = tier_of(score)
+        rank = {"simpleCoding": ranks[ident], "reasoning": ranks[ident]}
+        note = (
+            f"Artificial Analysis Intelligence Index {score:g} "
+            "(composite; axis ranks provisional)"
+        )
+        checked_at = today
+        prev = existing.get(ident)
+        if (
+            not touch
+            and prev is not None
+            and prev.get("tier") == tier
+            and prev.get("rank") == rank
+            and prev.get("evidence")
+            and prev["evidence"][0].get("note") == note
+        ):
+            checked_at = prev["evidence"][0].get("checkedAt", today)
+        entries[ident] = {
             "key": key,
             "effort": effort,
-            "tier": tier_of(score),
-            "rank": {"simpleCoding": ranks[name], "reasoning": ranks[name]},
+            "tier": tier,
+            "rank": rank,
             "evidence": [
                 {
                     "kind": "benchmark",
                     "source": AA_SOURCE,
-                    "checkedAt": today,
-                    "note": (
-                        f"Artificial Analysis Intelligence Index {score:g} "
-                        "(composite; axis ranks provisional)"
-                    ),
+                    "checkedAt": checked_at,
+                    "note": note,
                 }
             ],
         }
     return entries
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    args = argv if argv is not None else sys.argv[1:]
+    touch = "--touch" in args
+
     facts: dict[str, Any] = json.loads(FACTS_PATH.read_text(encoding="utf-8"))
     tiers: dict[str, Any] = json.loads(TIERS_PATH.read_text(encoding="utf-8"))
-    fact_keys = {f"{m['vendorId']}/{m['model']}" for m in facts["models"]}
+    fact_efforts = {
+        f"{m['vendorId']}/{m['model']}": list(m["efforts"]) for m in facts["models"]
+    }
     today = date.today().isoformat()
 
     page = fetch_leaderboard()
     rows = parse_rows(page)
     if not rows:
         sys.exit("no leaderboard rows parsed; aborting without changes")
-    aa_entries = build_aa_entries(rows, fact_keys, today)
+
+    existing_aa = {
+        (e["key"], e["effort"]): e for e in tiers["entries"] if is_aa_managed(e)
+    }
+    aa_entries = build_aa_entries(
+        rows, fact_efforts, today, existing_aa=existing_aa, touch=touch
+    )
 
     preserved = [e for e in tiers["entries"] if not is_aa_managed(e)]
     regenerated = list(aa_entries.values())
     merged = preserved + regenerated
     merged.sort(key=lambda e: (e["key"], e["effort"]))
 
-    tiers["date"] = today
+    changed = (
+        touch
+        or merged != tiers["entries"]
+        or tiers.get("factsDate") != facts["date"]
+    )
+    if changed:
+        tiers["date"] = today
     tiers["factsDate"] = facts["date"]
     tiers["entries"] = merged
 
