@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/deximple/model-tf/schema/model-facts.schema.json",
+  "title": "model-facts",
+  "description": "Model facts bundle. POSA `version: 1` shape: vendorId is the model maker (not a harness), model is the maker's model id, and every value carries its source URL and check date. Rankings, recommendations, and strengths do not belong here.",
+  "type": "object",
+  "required": ["version", "date", "models"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Bundle date (YYYY-MM-DD)."
+    },
+    "models": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/model" }
+    }
+  },
+  "$defs": {
+    "model": {
+      "type": "object",
+      "required": ["vendorId", "model", "name", "efforts", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "vendorId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Model maker id (e.g. claude, openai, google, xai, zhipuai). Not a harness or subscription."
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The maker's model id."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Display name."
+        },
+        "efforts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Reasoning effort levels, ordered low to high. Empty means the model has no effort choice."
+        },
+        "values": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/value" }
+        }
+      }
+    },
+    "value": {
+      "type": "object",
+      "required": ["id", "code", "number", "text", "source", "checkedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "vendorId/model/code, optionally suffixed with a plan qualifier (e.g. monthlyLimitUSD/go)."
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Fact code. Consumers ignore unknown codes."
+        },
+        "number": {
+          "type": ["number", "null"],
+          "description": "Numeric value, or null when the fact is textual."
+        },
+        "text": {
+          "type": ["string", "null"],
+          "description": "Text value (vendor-written names, plan qualifiers), or null when numeric."
+        },
+        "source": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL the value was checked against."
+        },
+        "checkedAt": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Date the source was last verified (YYYY-MM-DD)."
+        }
+      }
+    }
+  }
+}
