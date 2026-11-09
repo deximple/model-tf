@@ -172,8 +172,8 @@
   },
   {
    "vendorId": "claude",
-   "model": "claude-fable-5-1",
-   "name": "Claude Fable 5.1",
+   "model": "claude-fable-5-2",
+   "name": "Claude Fable 5.2",
    "efforts": [
     "low",
     "medium",
@@ -183,68 +183,68 @@
    ],
    "values": [
     {
-     "id": "claude/claude-fable-5-1/cachedReadPricePerMTok",
+     "id": "claude/claude-fable-5-2/cachedReadPricePerMTok",
      "code": "cachedReadPricePerMTok",
-     "number": 0.25,
+     "number": 0.2,
      "text": null,
      "source": "https://platform.claude.com/docs/en/models/overview",
-     "checkedAt": "2026-11-07"
+     "checkedAt": "2026-11-09"
     },
     {
-     "id": "claude/claude-fable-5-1/comparativeLatency",
+     "id": "claude/claude-fable-5-2/comparativeLatency",
      "code": "comparativeLatency",
      "number": null,
-     "text": "Slower",
+     "text": "Moderate",
      "source": "https://platform.claude.com/docs/en/models/overview",
-     "checkedAt": "2026-11-02"
+     "checkedAt": "2026-11-09"
     },
     {
-     "id": "claude/claude-fable-5-1/contextTokens",
+     "id": "claude/claude-fable-5-2/contextTokens",
      "code": "contextTokens",
      "number": 1000000,
      "text": null,
      "source": "https://platform.claude.com/docs/en/models/overview",
-     "checkedAt": "2026-11-02"
+     "checkedAt": "2026-11-09"
     },
     {
-     "id": "claude/claude-fable-5-1/defaultEffort",
+     "id": "claude/claude-fable-5-2/defaultEffort",
      "code": "defaultEffort",
      "number": null,
      "text": "high",
      "source": "https://platform.claude.com/docs/en/build-with-claude/effort",
-     "checkedAt": "2026-11-02"
+     "checkedAt": "2026-11-09"
     },
     {
-     "id": "claude/claude-fable-5-1/inputKinds",
+     "id": "claude/claude-fable-5-2/inputKinds",
      "code": "inputKinds",
      "number": null,
      "text": "text,image",
      "source": "https://platform.claude.com/docs/en/models/overview",
-     "checkedAt": "2026-11-02"
+     "checkedAt": "2026-11-09"
     },
     {
-     "id": "claude/claude-fable-5-1/inputPricePerMTok",
+     "id": "claude/claude-fable-5-2/inputPricePerMTok",
      "code": "inputPricePerMTok",
-     "number": 10,
+     "number": 8,
      "text": null,
      "source": "https://platform.claude.com/docs/en/models/overview",
-     "checkedAt": "2026-11-02"
+     "checkedAt": "2026-11-09"
     },
     {
-     "id": "claude/claude-fable-5-1/maxOutputTokens",
+     "id": "claude/claude-fable-5-2/maxOutputTokens",
      "code": "maxOutputTokens",
      "number": 128000,
      "text": null,
      "source": "https://platform.claude.com/docs/en/models/overview",
-     "checkedAt": "2026-11-02"
+     "checkedAt": "2026-11-09"
     },
     {
-     "id": "claude/claude-fable-5-1/outputPricePerMTok",
+     "id": "claude/claude-fable-5-2/outputPricePerMTok",
      "code": "outputPricePerMTok",
-     "number": 50,
+     "number": 40,
      "text": null,
      "source": "https://platform.claude.com/docs/en/models/overview",
-     "checkedAt": "2026-11-02"
+     "checkedAt": "2026-11-09"
     }
    ]
   },
