@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-07",
+ "date": "2026-11-09",
  "models": [
   {
    "vendorId": "alibaba",
@@ -1049,6 +1049,38 @@
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
+    }
+   ]
+  },
+  {
+   "vendorId": "meituan",
+   "model": "longcat-2.5-free",
+   "name": "LongCat 2.5 Free",
+   "efforts": [],
+   "values": [
+    {
+     "id": "meituan/longcat-2.5-free/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-09"
+    },
+    {
+     "id": "meituan/longcat-2.5-free/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-09"
+    },
+    {
+     "id": "meituan/longcat-2.5-free/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-09"
     }
    ]
   },
