@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-09",
+ "date": "2026-11-10",
  "models": [
   {
    "vendorId": "alibaba",
@@ -1880,38 +1880,6 @@
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
-    }
-   ]
-  },
-  {
-   "vendorId": "opencode",
-   "model": "crouton-alpha-free",
-   "name": "Crouton Alpha Free",
-   "efforts": [],
-   "values": [
-    {
-     "id": "opencode/crouton-alpha-free/cachedReadPricePerMTok",
-     "code": "cachedReadPricePerMTok",
-     "number": 0,
-     "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-07"
-    },
-    {
-     "id": "opencode/crouton-alpha-free/inputPricePerMTok",
-     "code": "inputPricePerMTok",
-     "number": 0,
-     "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-07"
-    },
-    {
-     "id": "opencode/crouton-alpha-free/outputPricePerMTok",
-     "code": "outputPricePerMTok",
-     "number": 0,
-     "text": null,
-     "source": "https://opencode.ai/docs/go/",
-     "checkedAt": "2026-11-07"
     }
    ]
   },
