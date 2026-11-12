@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-10",
+ "date": "2026-11-12",
  "factsDate": "2026-11-10",
  "axis": [
   "simpleCoding",
@@ -84,6 +84,12 @@
      "source": "https://www.vals.ai/benchmarks",
      "checkedAt": "2026-11-09",
      "note": "Vals AI Index 71.3%"
+    },
+    {
+     "kind": "benchmark",
+     "source": "https://scale.com/leaderboard",
+     "checkedAt": "2026-11-12",
+     "note": "Scale SEAL: Humanity's Sixth Sense 59.5, HLE Diamond 72.4"
     }
    ]
   },
@@ -375,12 +381,6 @@
      "source": "https://www.vals.ai/benchmarks",
      "checkedAt": "2026-11-09",
      "note": "Vals AI Index 70.9%"
-    },
-    {
-     "kind": "benchmark",
-     "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-09",
-     "note": "Scale SEAL: HLE Diamond 37.5, SWE Atlas 67.5"
     }
    ]
   },
@@ -558,12 +558,6 @@
      "source": "https://www.vals.ai/benchmarks",
      "checkedAt": "2026-11-09",
      "note": "Vals AI Index 56%"
-    },
-    {
-     "kind": "benchmark",
-     "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-09",
-     "note": "Scale SEAL: Humanity's Sixth Sense 41.6"
     }
    ]
   },
@@ -1037,8 +1031,8 @@
     {
      "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-09",
-     "note": "Scale SEAL: Humanity's Sixth Sense 46.6, SWE Atlas 65.9, MultiChallenge 82"
+     "checkedAt": "2026-11-12",
+     "note": "Scale SEAL: Humanity's Sixth Sense 46.6, MultiChallenge 82"
     }
    ]
   },
