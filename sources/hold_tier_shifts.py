@@ -28,7 +28,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from check_staleness import _load_head_json  # noqa: E402
+from check_staleness import load_head_json  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 TIERS_PATH = ROOT / "model-tiers.json"
@@ -75,7 +75,7 @@ def main(argv: list[str] | None = None) -> None:
         print("hold_tier_shifts: no single-source tier shifts to hold")
         return
 
-    old_tiers = _load_head_json("model-tiers.json")
+    old_tiers = load_head_json("model-tiers.json")
     if old_tiers is None:
         sys.exit("hold_tier_shifts: cannot read HEAD:model-tiers.json")
     new_tiers = json.loads(TIERS_PATH.read_text(encoding="utf-8"))

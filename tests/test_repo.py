@@ -260,6 +260,9 @@ class StalenessTests(unittest.TestCase):
         self.assertFalse(gate2["requires_pr"])
         self.assertEqual(gate1["single_source_idents"], [["claude/claude-opus-5-5", "max"]])
         self.assertEqual(gate2["single_source_idents"], [])
+        # Evidence carried forward from a source that failed this run is not confirmation.
+        gate3 = check_staleness.evaluate_tier_gate(old_t, new_multi, unverified_sources={"https://b"})
+        self.assertTrue(gate3["requires_pr"])
 
 
 def _ev(source: str, note: str, checked: str) -> dict:
@@ -305,6 +308,34 @@ class RefreshCommonTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError):
             refresh_common.fetch_url("https://x.test/a", opener=opener, sleep=lambda s: None)
         self.assertEqual(len(calls), 1)
+
+    def test_fetch_url_does_not_retry_bad_certificates(self) -> None:
+        import ssl
+
+        calls = []
+
+        def opener(req, timeout):
+            calls.append(1)
+            raise urllib.error.URLError(ssl.SSLCertVerificationError("certificate has expired"))
+
+        with self.assertRaises(urllib.error.URLError):
+            refresh_common.fetch_url("https://x.test/a", opener=opener, sleep=lambda s: None)
+        self.assertEqual(len(calls), 1)
+
+    def test_describe_error_is_single_line(self) -> None:
+        self.assertEqual(
+            refresh_common.describe_error(ValueError("bad\n  layout\r\nhere")),
+            "ValueError: bad layout here",
+        )
+
+    def test_status_roundtrip_of_failed_urls(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        path = str(tmp / "s.json")
+        refresh_common.write_status(path, "tiers", {"vals": "error: x"}, failed_urls={"https://v"})
+        self.assertEqual(refresh_common.read_failed_urls(path), {"https://v"})
+        self.assertEqual(refresh_common.read_failed_urls(str(tmp / "missing.json")), set())
+        self.assertEqual(refresh_common.read_failed_urls(None), set())
 
     def test_option_value(self) -> None:
         self.assertEqual(refresh_common.option_value(["--touch", "--status-out", "a.json"], "--status-out"), "a.json")
@@ -383,6 +414,32 @@ class VendorIsolationTests(unittest.TestCase):
         self.assertEqual(vals["inputPricePerMTok"]["number"], 5)
         self.assertEqual(vals["inputPricePerMTok"]["source"], self.CLAUDE)
         # Healthy vendor's unchanged value keeps its previous checkedAt.
+        self.assertEqual(vals["monthlyLimitUSD/go"]["checkedAt"], "2026-11-01")
+
+    def test_failed_lower_priority_vendor_does_not_override_fresh_first_party_value(self) -> None:
+        opus = "claude/claude-opus-5-5"
+        existing = self._existing()
+        # Yesterday only the Go catalog supplied this id.
+        existing[1]["values"].append(self._val(opus, "cachedReadPricePerMTok", 0.6, self.GO, "2026-11-01"))
+        claude_batch = [
+            {
+                "vendorId": "claude",
+                "model": "claude-opus-5-5",
+                "name": "Claude Opus 5.5",
+                "efforts": ["low", "high", "max"],
+                "values": [
+                    self._val(opus, "inputPricePerMTok", 5, self.CLAUDE, "2026-11-15"),
+                    self._val(opus, "cachedReadPricePerMTok", 0.5, self.CLAUDE, "2026-11-15"),
+                ],
+            }
+        ]
+        merged = fetch_vf.merge_models(
+            existing, [claude_batch, []], today="2026-11-15", held={1: {self.GO}}
+        )
+        vals = {v["code"]: v for v in merged[-1]["values"]}
+        self.assertEqual(vals["cachedReadPricePerMTok"]["source"], self.CLAUDE)
+        self.assertEqual(vals["cachedReadPricePerMTok"]["number"], 0.5)
+        # Go-only values are still carried forward while Go is down.
         self.assertEqual(vals["monthlyLimitUSD/go"]["checkedAt"], "2026-11-01")
 
     def test_without_failures_unrefreshed_managed_models_are_dropped(self) -> None:
@@ -520,6 +577,10 @@ class BenchmarkFailureTests(unittest.TestCase):
         status = json.loads((tmp / "status.json").read_text(encoding="utf-8"))["sources"]
         self.assertTrue(status["artificialanalysis"].startswith("error:"))
         self.assertTrue(status["scale"].startswith("skipped"))
+        self.assertEqual(
+            refresh_common.read_failed_urls(str(tmp / "status.json")),
+            fetch_aa.MANAGED_BENCHMARK_SOURCES,
+        )
 
 
 class HoldTierShiftTests(unittest.TestCase):
@@ -567,6 +628,8 @@ args = sys.argv[1:]
 with open(os.environ["FAKE_GH_LOG"], "a", encoding="utf-8") as fh:
     fh.write(json.dumps(args) + "\\n")
 if args[:2] == ["issue", "list"]:
+    if os.environ.get("FAKE_GH_LIST_FAIL"):
+        sys.exit(1)
     print(os.environ.get("FAKE_GH_OPEN_ISSUE", ""))
 elif args[:2] == ["issue", "view"]:
     print(os.environ.get("FAKE_GH_LAST_MARKED_BODY", ""))
@@ -594,7 +657,7 @@ class RefreshAlertScriptTests(unittest.TestCase):
             str(self.status_dir / f"status-{collector}.json"), collector, sources
         )
 
-    def _run(self, **env_overrides: str) -> tuple[list[list[str]], str, str]:
+    def _run(self, expect_rc: int = 0, **env_overrides: str) -> tuple[list[list[str]], str, str]:
         log = self.tmp / "gh.log"
         summary = self.tmp / "summary.md"
         log.write_text("", encoding="utf-8")
@@ -615,7 +678,7 @@ class RefreshAlertScriptTests(unittest.TestCase):
         proc = subprocess.run(
             ["bash", str(self.SCRIPT)], env=env, capture_output=True, text=True
         )
-        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(proc.returncode, expect_rc, proc.stdout + proc.stderr)
         calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines() if line]
         return calls, proc.stdout, summary.read_text(encoding="utf-8")
 
@@ -682,6 +745,12 @@ class RefreshAlertScriptTests(unittest.TestCase):
         self.assertEqual(len(comment), 1)
         self.assertEqual(comment[0][2], "7")
         self.assertNotIn("issue create", self._verbs(calls))
+
+    def test_unanswerable_issue_lookup_does_not_file_duplicate(self) -> None:
+        self._degraded()
+        calls, out, _ = self._run(expect_rc=1, FAKE_GH_LIST_FAIL="1", ALERT_RETRY_DELAY="0")
+        self.assertNotIn("issue create", self._verbs(calls))
+        self.assertIn("avoid duplicates", out)
 
     def test_failed_job_and_pr_failure_are_reported(self) -> None:
         calls, out, summary = self._run(JOB_STATUS="failure", PR_OUTCOME="failure")

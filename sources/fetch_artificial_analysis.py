@@ -667,6 +667,14 @@ def _safe_fetch_list(label: str, fn: Any, url: str) -> tuple[list[dict[str, Any]
         return [], msg
 
 
+# (label, status slug, parser, url) for the secondary leaderboards.
+SECONDARY_SOURCES = (
+    ("Terminal-Bench", "tbench", parse_tbench_leaderboard, TBENCH_URL),
+    ("Vals AI", "vals", parse_vals_benchmarks, VALS_URL),
+    ("Scale SEAL", "scale", parse_scale_leaderboard, SCALE_URL),
+)
+
+
 def _entry_is_valid(key: str, effort: str, fact_efforts: dict[str, list[str]]) -> bool:
     return key in fact_efforts and _valid_effort(effort, fact_efforts[key])
 
@@ -745,26 +753,17 @@ def main(argv: list[str] | None = None) -> None:
         status["artificialanalysis"] = f"error: {msg}"
         rows = []
 
-    tbench_rows: list[dict[str, Any]] = []
-    vals_rows: list[dict[str, Any]] = []
-    scale_rows: list[dict[str, Any]] = []
+    secondary: dict[str, list[dict[str, Any]]] = {}
+    failed_sources: set[str] = set()
     if rows:
-        failed_sources: set[str] = set()
-        for label, slug, fn, url in (
-            ("Terminal-Bench", "tbench", parse_tbench_leaderboard, TBENCH_URL),
-            ("Vals AI", "vals", parse_vals_benchmarks, VALS_URL),
-            ("Scale SEAL", "scale", parse_scale_leaderboard, SCALE_URL),
-        ):
-            got, err = _safe_fetch_list(label, fn, url)
+        for label, slug, fn, url in SECONDARY_SOURCES:
+            secondary[slug], err = _safe_fetch_list(label, fn, url)
             status[slug] = "ok" if err is None else f"error: {err}"
             if err is not None:
                 failed_sources.add(url)
-            if slug == "tbench":
-                tbench_rows = got
-            elif slug == "vals":
-                vals_rows = got
-            else:
-                scale_rows = got
+        tbench_rows = secondary["tbench"]
+        vals_rows = secondary["vals"]
+        scale_rows = secondary["scale"]
 
         aa_entries = build_aa_entries(
             rows,
@@ -784,12 +783,13 @@ def main(argv: list[str] | None = None) -> None:
     else:
         # Primary source down: keep yesterday's benchmark entries, dropping only
         # those that no longer match model-facts.json so validation still passes.
-        for slug in ("tbench", "vals", "scale"):
+        for _, slug, _, _ in SECONDARY_SOURCES:
             status[slug] = "skipped: primary source unavailable"
+        failed_sources = set(MANAGED_BENCHMARK_SOURCES)
         regenerated = [
             e for e in existing_aa.values() if _entry_is_valid(e["key"], e["effort"], fact_efforts)
         ]
-    write_status(status_out, "tiers", status)
+    write_status(status_out, "tiers", status, failed_urls=failed_sources)
 
     preserved = [e for e in tiers["entries"] if not is_aa_managed(e)]
     merged = preserved + regenerated
@@ -811,8 +811,9 @@ def main(argv: list[str] | None = None) -> None:
     print(
         f"model-tiers.json: {len(preserved)} preserved + "
         f"{len(regenerated)} benchmark-managed = {len(merged)} entries "
-        f"(aa={len(rows)}, tbench={len(tbench_rows)}, vals={len(vals_rows)}, "
-        f"scale={len(scale_rows)}, changed={changed})"
+        f"(aa={len(rows)}, "
+        + ", ".join(f"{slug}={len(secondary.get(slug, []))}" for _, slug, _, _ in SECONDARY_SOURCES)
+        + f", changed={changed})"
     )
 
 

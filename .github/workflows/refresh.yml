@@ -99,7 +99,7 @@ jobs:
       - name: Build summary, staleness report, and gate decision
         id: gate
         run: |
-          python sources/check_staleness.py --diff-head --gate-out "$RUNNER_TEMP/gate.json" | tee "$RUNNER_TEMP/pr-body.md"
+          python sources/check_staleness.py --diff-head --tiers-status "$RUNNER_TEMP/status-tiers.json" --gate-out "$RUNNER_TEMP/gate.json" | tee "$RUNNER_TEMP/pr-body.md"
           cat "$RUNNER_TEMP/pr-body.md" >> "$GITHUB_STEP_SUMMARY"
           requires_pr=$(jq -r '.requires_pr' "$RUNNER_TEMP/gate.json")
           case "$MODE" in

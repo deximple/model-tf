@@ -36,8 +36,8 @@ for name in status-facts.json status-tiers.json; do
     continue
   fi
   found_status=true
-  jq -r '.collector as $c | .sources | to_entries[] | "| \($c) | \(.key) | \(.value | gsub("\\|"; "/")) |"' "$f" >> "$summary"
-  jq -r '.collector as $c | .sources | to_entries[] | select(.value != "ok") | "- `\($c)/\(.key)`: \(.value)"' "$f" >> "$problems"
+  jq -r '.collector as $c | .sources | to_entries[] | "| \($c) | \(.key) | \(.value | gsub("[\\r\\n]+"; " ") | gsub("\\|"; "/")) |"' "$f" >> "$summary"
+  jq -r '.collector as $c | .sources | to_entries[] | select(.value != "ok") | "- `\($c)/\(.key)`: \(.value | gsub("[\\r\\n]+"; " "))"' "$f" >> "$problems"
 done
 if [ "$found_status" = false ]; then
   echo "| - | - | no status files (collectors did not run) |" >> "$summary"
@@ -53,7 +53,16 @@ if [ "${PR_OUTCOME:-}" = "failure" ]; then
 fi
 
 gh label create "$label" --color B60205 --description "Automated data refresh needs attention" --force >/dev/null 2>&1 || true
-existing="$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+# Look up the open alert; retry once. If GitHub cannot answer, fail this step
+# rather than guess "none open" and file a duplicate issue.
+lookup() { gh issue list --label "$label" --state open --json number --jq '.[0].number // empty'; }
+if ! existing="$(lookup)"; then
+  sleep "${ALERT_RETRY_DELAY:-5}"
+  if ! existing="$(lookup)"; then
+    echo "::error::could not query open refresh-alert issues; skipping issue update to avoid duplicates"
+    exit 1
+  fi
+fi
 
 # 3. Healthy run: close a lingering alert.
 if [ ! -s "$problems" ]; then

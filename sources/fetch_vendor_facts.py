@@ -1017,6 +1017,7 @@ def merge_models(
 
     merged: dict[tuple[str, str], dict[str, Any]] = {}
     seeded_by: dict[tuple[str, str], int] = {}
+    value_batch: dict[str, int] = {}  # value id -> batch index that supplied it
 
     # Seed from collected batches in priority order (1st-party makers first, OpenCode Go last).
     for batch_idx, batch in enumerate(collected_batches):
@@ -1053,6 +1054,7 @@ def merge_models(
                 ):
                     new_v["checkedAt"] = old_v.get("checkedAt", today)
                 merged[key]["values"][vid_str] = new_v
+                value_batch[vid_str] = batch_idx
 
     # Preserve hand-curated (unmanaged) values and values of vendors that failed this run.
     for key, old_m in existing_by_key.items():
@@ -1082,7 +1084,9 @@ def merge_models(
             if min(held_idx) < seeded_by.get(key, len(collected_batches)):
                 cur["name"] = old_m["name"]
         for v in kept_vals:
-            if v["source"] in held_rank:
+            src_rank = held_rank.get(v["source"])
+            if src_rank is not None and src_rank < value_batch.get(v["id"], len(collected_batches)):
+                # Failed vendor outranks whoever supplied this id today: keep its last-good value.
                 cur["values"][v["id"]] = dict(v)
             else:
                 cur["values"].setdefault(v["id"], dict(v))

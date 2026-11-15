@@ -48,7 +48,7 @@ flips are held back for a review PR; everything else still lands on `main`.
   re-synced to `model-facts.json`.
 
 Both collectors accept `--status-out PATH` and write
-`{"collector": ..., "sources": {name: "ok" | "error: ..."}}`. The workflow
+`{"collector", "sources": {name: "ok" | "error: ..."}, "failed_urls"}`. Carried-forward `failed_urls` do not count toward the two-source tier gate. The workflow
 turns any non-`ok` source into a `refresh-alert` issue.
 
 Run locally:

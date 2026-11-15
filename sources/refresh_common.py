@@ -11,6 +11,8 @@
 
 import http.client
 import json
+import re
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -26,6 +28,9 @@ RETRYABLE_HTTP = {408, 425, 429, 500, 502, 503, 504}
 def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, urllib.error.HTTPError):
         return exc.code in RETRYABLE_HTTP
+    reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
+    if isinstance(reason, (ssl.SSLCertVerificationError, ssl.CertificateError)):
+        return False  # a bad certificate will not fix itself within seconds
     # URLError (DNS, connection reset, TLS), socket timeouts, truncated or
     # malformed responses (http.client.IncompleteRead, RemoteDisconnected).
     return isinstance(exc, (OSError, http.client.HTTPException))
@@ -65,15 +70,38 @@ def option_value(args: list[str], flag: str) -> str | None:
 
 
 def describe_error(exc: BaseException) -> str:
-    text = f"{type(exc).__name__}: {exc}"
+    """One-line, bounded error text (safe for markdown tables and annotations)."""
+    text = re.sub(r"\s+", " ", f"{type(exc).__name__}: {exc}").strip()
     return text if len(text) <= 300 else text[:297] + "..."
 
 
-def write_status(path: str | None, collector: str, status: dict[str, str]) -> None:
-    """Write ``{"collector": ..., "sources": {label: "ok" | "error: ..."}}``."""
+def write_status(
+    path: str | None,
+    collector: str,
+    status: dict[str, str],
+    failed_urls: set[str] | None = None,
+) -> None:
+    """Write ``{"collector", "sources": {label: "ok" | "error: ..."}, "failed_urls"}``.
+
+    ``failed_urls`` lists evidence source URLs that were carried forward rather
+    than re-verified this run; the tier gate must not count them as confirmation.
+    """
     if not path:
         return
-    Path(path).write_text(
-        json.dumps({"collector": collector, "sources": status}, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    payload = {
+        "collector": collector,
+        "sources": status,
+        "failed_urls": sorted(failed_urls or ()),
+    }
+    Path(path).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def read_failed_urls(path: str | None) -> set[str]:
+    """Inverse of write_status's failed_urls; a missing/unreadable file means none."""
+    if not path:
+        return set()
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    return set(data.get("failed_urls") or [])
