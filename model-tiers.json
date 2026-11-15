@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-12",
+ "date": "2026-11-15",
  "factsDate": "2026-11-10",
  "axis": [
   "simpleCoding",
@@ -12,20 +12,20 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 38,
+    "simpleCoding": 37,
     "reasoning": 36
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 33.7, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 31.2"
     },
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 26.97% (Claude Code)"
     }
    ]
@@ -52,14 +52,14 @@
    "effort": "low",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 14,
+    "simpleCoding": 16,
     "reasoning": 12
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 53.9, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 46.5"
     }
    ]
@@ -98,14 +98,14 @@
    "effort": "medium",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 13,
+    "simpleCoding": 15,
     "reasoning": 7
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 56.4, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 48.2"
     }
    ]
@@ -132,14 +132,14 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 46,
+    "simpleCoding": 47,
     "reasoning": 44
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 29.9, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 22.5"
     }
    ]
@@ -149,14 +149,14 @@
    "effort": "low",
    "tier": "low",
    "rank": {
-    "simpleCoding": 64,
-    "reasoning": 61
+    "simpleCoding": 65,
+    "reasoning": 63
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 18.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 10.3"
     }
    ]
@@ -166,15 +166,21 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 30,
-    "reasoning": 28
+    "simpleCoding": 27,
+    "reasoning": 29
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 36.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 33.9"
+    },
+    {
+     "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 40% (Claude Code)"
     }
    ]
   },
@@ -183,14 +189,14 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 56,
+    "simpleCoding": 57,
     "reasoning": 54
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 24.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 15.6"
     }
    ]
@@ -201,13 +207,13 @@
    "tier": "mid",
    "rank": {
     "simpleCoding": 36,
-    "reasoning": 33
+    "reasoning": 34
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 34.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 29.6"
     }
    ]
@@ -217,14 +223,14 @@
    "effort": "high",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 18,
+    "simpleCoding": 19,
     "reasoning": 14
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 51.8, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 46.2"
     }
    ]
@@ -235,13 +241,13 @@
    "tier": "mid",
    "rank": {
     "simpleCoding": 42,
-    "reasoning": 31
+    "reasoning": 32
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 34.8, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 23.6"
     }
    ]
@@ -286,14 +292,14 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 20,
+    "simpleCoding": 21,
     "reasoning": 20
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 48.2, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 42.8"
     }
    ]
@@ -303,20 +309,20 @@
    "effort": "xhigh",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 10,
+    "simpleCoding": 11,
     "reasoning": 5
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 57.4, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 51.7"
     },
     {
      "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Scale SEAL: Humanity's Sixth Sense 44.6"
     }
    ]
@@ -326,14 +332,14 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 27,
-    "reasoning": 26
+    "simpleCoding": 30,
+    "reasoning": 27
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 41.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 34.8"
     }
    ]
@@ -406,15 +412,32 @@
    "effort": "xhigh",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 15,
+    "simpleCoding": 17,
     "reasoning": 19
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 49.9, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 46.4"
+    }
+   ]
+  },
+  {
+   "key": "deepseek/deepseek-v4-pro",
+   "effort": "high",
+   "tier": "low",
+   "rank": {
+    "simpleCoding": 63,
+    "reasoning": 60
+   },
+   "evidence": [
+    {
+     "kind": "benchmark",
+     "source": "https://artificialanalysis.ai/leaderboards/models",
+     "checkedAt": "2026-11-15",
+     "note": "Artificial Analysis Intelligence Index 20.8, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 11.4"
     }
    ]
   },
@@ -423,20 +446,26 @@
    "effort": "max",
    "tier": "low",
    "rank": {
-    "simpleCoding": 56,
+    "simpleCoding": 64,
     "reasoning": 56
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 23.1, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 15.6"
     },
     {
      "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 6.67% (Claude Code)"
+    },
+    {
+     "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Vals AI Index 53%"
     }
    ]
@@ -446,14 +475,14 @@
    "effort": "none",
    "tier": "low",
    "rank": {
-    "simpleCoding": 68,
-    "reasoning": 66
+    "simpleCoding": 70,
+    "reasoning": 68
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 12.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 5.9"
     }
    ]
@@ -463,14 +492,14 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 44,
+    "simpleCoding": 45,
     "reasoning": 48
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 28.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 22.8"
     }
    ]
@@ -480,20 +509,26 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 33,
+    "simpleCoding": 30,
     "reasoning": 37
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 32.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 31.2"
     },
     {
      "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 38.48% (Claude Code)"
+    },
+    {
+     "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Vals AI Index 61.3%"
     }
    ]
@@ -503,14 +538,14 @@
    "effort": "none",
    "tier": "low",
    "rank": {
-    "simpleCoding": 66,
-    "reasoning": 62
+    "simpleCoding": 68,
+    "reasoning": 64
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 18.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 7.6"
     }
    ]
@@ -520,14 +555,14 @@
    "effort": "default",
    "tier": "low",
    "rank": {
-    "simpleCoding": 69,
-    "reasoning": 68
+    "simpleCoding": 71,
+    "reasoning": 70
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 11.7, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 3.5"
     }
    ]
@@ -537,26 +572,26 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 52,
+    "simpleCoding": 53,
     "reasoning": 40
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 30.8, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 19.2"
     },
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 18.18% (mini-SWE-agent)"
     },
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Vals AI Index 56%"
     }
    ]
@@ -566,14 +601,14 @@
    "effort": "low",
    "tier": "low",
    "rank": {
-    "simpleCoding": 65,
+    "simpleCoding": 67,
     "reasoning": 58
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 22.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 9.1"
     }
    ]
@@ -583,14 +618,14 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 53,
+    "simpleCoding": 54,
     "reasoning": 43
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 30.1, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 18.1"
     }
    ]
@@ -600,27 +635,50 @@
    "effort": "high",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 23,
+    "simpleCoding": 14,
     "reasoning": 17
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 50.4, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 41.4"
     },
     {
      "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 55.45% (Antigravity CLI)"
+    },
+    {
+     "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Vals AI Index 69.4%"
     },
     {
      "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Scale SEAL: Humanity's Sixth Sense 55.4, HLE Diamond 53.2, MCP Atlas 90.7, SWE Atlas 70.1, MultiChallenge 78.7"
+    }
+   ]
+  },
+  {
+   "key": "google/gemini-4-argon",
+   "effort": "medium",
+   "tier": "mid",
+   "rank": {
+    "simpleCoding": 25,
+    "reasoning": 21
+   },
+   "evidence": [
+    {
+     "kind": "benchmark",
+     "source": "https://artificialanalysis.ai/leaderboards/models",
+     "checkedAt": "2026-11-15",
+     "note": "Artificial Analysis Intelligence Index 47.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 40"
     }
    ]
   },
@@ -630,13 +688,13 @@
    "tier": "low",
    "rank": {
     "simpleCoding": 58,
-    "reasoning": 66
+    "reasoning": 68
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 14.85% (Muse Code)"
     }
    ]
@@ -646,15 +704,21 @@
    "effort": "default",
    "tier": "low",
    "rank": {
-    "simpleCoding": 62,
-    "reasoning": 60
+    "simpleCoding": 66,
+    "reasoning": 62
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 18.9, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 12"
+    },
+    {
+     "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 7.58% (mini-swe-agent)"
     }
    ]
   },
@@ -684,16 +748,22 @@
   {
    "key": "moonshotai/kimi-k3",
    "effort": "default",
-   "tier": "mid",
+   "tier": "low",
    "rank": {
-    "simpleCoding": 28,
-    "reasoning": 35
+    "simpleCoding": 44,
+    "reasoning": 61
    },
    "evidence": [
     {
      "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 23.03% (Claude Code)"
+    },
+    {
+     "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Vals AI Index 53%"
     }
    ]
@@ -703,20 +773,26 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 16,
-    "reasoning": 21
+    "simpleCoding": 10,
+    "reasoning": 22
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 46.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 46.3"
     },
     {
      "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 59.7% (Claude Code)"
+    },
+    {
+     "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Vals AI Index 62.5%"
     }
    ]
@@ -726,14 +802,14 @@
    "effort": "max",
    "tier": "low",
    "rank": {
-    "simpleCoding": 54,
-    "reasoning": 65
+    "simpleCoding": 55,
+    "reasoning": 67
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 17.58% (Codex)"
     }
    ]
@@ -766,20 +842,20 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 21,
-    "reasoning": 24
+    "simpleCoding": 22,
+    "reasoning": 25
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 43.3, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 34.1"
     },
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 50.91% (Codex)"
     }
    ]
@@ -824,20 +900,20 @@
    "effort": "medium",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 11,
+    "simpleCoding": 13,
     "reasoning": 15
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 51.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 43"
     },
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 55.15% (Codex)"
     }
    ]
@@ -870,14 +946,14 @@
    "effort": "high",
    "tier": "low",
    "rank": {
-    "simpleCoding": 63,
+    "simpleCoding": 62,
     "reasoning": 59
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 21.4, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 11.6"
     }
    ]
@@ -887,14 +963,14 @@
    "effort": "low",
    "tier": "low",
    "rank": {
-    "simpleCoding": 71,
-    "reasoning": 70
+    "simpleCoding": 73,
+    "reasoning": 72
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 9.7, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 1.1"
     }
    ]
@@ -904,20 +980,20 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 55,
+    "simpleCoding": 56,
     "reasoning": 50
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 27.9, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 18.9"
     },
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 15.15% (Codex)"
     }
    ]
@@ -927,14 +1003,14 @@
    "effort": "medium",
    "tier": "low",
    "rank": {
-    "simpleCoding": 66,
-    "reasoning": 62
+    "simpleCoding": 68,
+    "reasoning": 64
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 18.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 7.6"
     }
    ]
@@ -944,14 +1020,14 @@
    "effort": "none",
    "tier": "low",
    "rank": {
-    "simpleCoding": 70,
-    "reasoning": 71
+    "simpleCoding": 72,
+    "reasoning": 73
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 9.4, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 1.5"
     }
    ]
@@ -978,14 +1054,14 @@
    "effort": "high",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 19,
+    "simpleCoding": 20,
     "reasoning": 18
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 50.3, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 44.1"
     }
    ]
@@ -996,13 +1072,13 @@
    "tier": "mid",
    "rank": {
     "simpleCoding": 40,
-    "reasoning": 31
+    "reasoning": 32
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 34.8, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 25.5"
     }
    ]
@@ -1042,13 +1118,13 @@
    "tier": "mid",
    "rank": {
     "simpleCoding": 24,
-    "reasoning": 22
+    "reasoning": 23
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 46.3, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 40.7"
     }
    ]
@@ -1058,14 +1134,14 @@
    "effort": "xhigh",
    "tier": "frontier",
    "rank": {
-    "simpleCoding": 16,
+    "simpleCoding": 18,
     "reasoning": 13
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 52.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 46.3"
     }
    ]
@@ -1075,14 +1151,14 @@
    "effort": "high",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 25,
-    "reasoning": 25
+    "simpleCoding": 26,
+    "reasoning": 26
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 42.4, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 39.7"
     }
    ]
@@ -1121,6 +1197,12 @@
     },
     {
      "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 53.33% (Codex)"
+    },
+    {
+     "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
      "checkedAt": "2026-11-09",
      "note": "Scale SEAL: MultiChallenge 74.2"
@@ -1132,14 +1214,14 @@
    "effort": "medium",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 31,
-    "reasoning": 27
+    "simpleCoding": 32,
+    "reasoning": 28
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 38.2, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 33.4"
     }
    ]
@@ -1166,14 +1248,14 @@
    "effort": "xhigh",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 22,
-    "reasoning": 23
+    "simpleCoding": 23,
+    "reasoning": 24
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 45.3, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 41.7"
     }
    ]
@@ -1183,14 +1265,14 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 45,
+    "simpleCoding": 46,
     "reasoning": 49
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 28.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 22.7"
     }
    ]
@@ -1201,14 +1283,20 @@
    "tier": "mid",
    "rank": {
     "simpleCoding": 29,
-    "reasoning": 33
+    "reasoning": 34
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 34.6, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 34.4"
+    },
+    {
+     "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 37.88% (Claude Code)"
     }
    ]
   },
@@ -1218,13 +1306,13 @@
    "tier": "low",
    "rank": {
     "simpleCoding": 61,
-    "reasoning": 69
+    "reasoning": 71
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 12.42% (Grok Build)"
     }
    ]
@@ -1235,13 +1323,13 @@
    "tier": "low",
    "rank": {
     "simpleCoding": 50,
-    "reasoning": 64
+    "reasoning": 66
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 19.7% (Grok Build)"
     }
    ]
@@ -1252,13 +1340,13 @@
    "tier": "mid",
    "rank": {
     "simpleCoding": 39,
-    "reasoning": 30
+    "reasoning": 31
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 35.2, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 26.3"
     }
    ]
@@ -1268,14 +1356,14 @@
    "effort": "low",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 51,
+    "simpleCoding": 52,
     "reasoning": 39
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 31.1, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 19"
     }
    ]
@@ -1285,26 +1373,26 @@
    "effort": "xhigh",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 32,
-    "reasoning": 29
+    "simpleCoding": 33,
+    "reasoning": 30
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 35.5, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 27.2"
     },
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 38.79% (Grok Build)"
     },
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Vals AI Index 58.6%"
     }
    ]
@@ -1314,15 +1402,21 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 47,
+    "simpleCoding": 51,
     "reasoning": 52
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 26.7, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 22.2"
+    },
+    {
+     "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 16.06% (mini-swe-agent)"
     }
    ]
   },
@@ -1331,15 +1425,21 @@
    "effort": "default",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 37,
+    "simpleCoding": 38,
     "reasoning": 44
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 29.9, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 29.4"
+    },
+    {
+     "kind": "benchmark",
+     "source": "https://www.tbench.ai/leaderboard",
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 26.97% (mini-swe-agent)"
     }
    ]
   },
@@ -1365,26 +1465,26 @@
    "effort": "max",
    "tier": "mid",
    "rank": {
-    "simpleCoding": 26,
+    "simpleCoding": 28,
     "reasoning": 38
    },
    "evidence": [
     {
      "kind": "benchmark",
      "source": "https://artificialanalysis.ai/leaderboards/models",
-     "checkedAt": "2026-11-07",
+     "checkedAt": "2026-11-15",
      "note": "Artificial Analysis Intelligence Index 31.7, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 31.8"
     },
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Terminal-Bench accuracy 41.21% (Claude Code)"
     },
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks",
-     "checkedAt": "2026-11-09",
+     "checkedAt": "2026-11-15",
      "note": "Vals AI Index 59.8%"
     }
    ]
@@ -1407,8 +1507,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-09",
-     "note": "Terminal-Bench accuracy 35.45% (Claude Code)"
+     "checkedAt": "2026-11-15",
+     "note": "Terminal-Bench accuracy 36.97% (Claude Code)"
     }
    ]
   }
