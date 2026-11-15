@@ -2,8 +2,12 @@
 """Unit tests for model-tf schemas, validator, vendor facts collector, benchmark collector, and staleness checker."""
 
 import copy
+import json
+import shutil
 import sys
+import tempfile
 import unittest
+import urllib.error
 from datetime import date
 from pathlib import Path
 
@@ -14,7 +18,9 @@ sys.path.insert(0, str(ROOT / "sources"))
 import check_staleness  # noqa: E402
 import fetch_artificial_analysis as fetch_aa  # noqa: E402
 import fetch_vendor_facts as fetch_vf  # noqa: E402
+import hold_tier_shifts  # noqa: E402
 import jsonschema  # noqa: E402
+import refresh_common  # noqa: E402
 import validate  # noqa: E402
 
 
@@ -250,6 +256,304 @@ class StalenessTests(unittest.TestCase):
         )
         gate2 = check_staleness.evaluate_tier_gate(old_t, new_multi)
         self.assertFalse(gate2["requires_pr"])
+        self.assertEqual(gate1["single_source_idents"], [["claude/claude-opus-5-5", "max"]])
+        self.assertEqual(gate2["single_source_idents"], [])
+
+
+def _ev(source: str, note: str, checked: str) -> dict:
+    return {"kind": "benchmark", "source": source, "checkedAt": checked, "note": note}
+
+
+class RefreshCommonTests(unittest.TestCase):
+    class _Resp:
+        def __init__(self, body: bytes) -> None:
+            self.body = body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self) -> bytes:
+            return self.body
+
+    def test_fetch_url_retries_transient_errors_then_succeeds(self) -> None:
+        calls = []
+
+        def opener(req, timeout):
+            calls.append(req.full_url)
+            if len(calls) < 3:
+                raise urllib.error.HTTPError(req.full_url, 503, "busy", {}, None)
+            return self._Resp(b"ok")
+
+        sleeps: list[float] = []
+        body = refresh_common.fetch_url("https://x.test/a", opener=opener, sleep=sleeps.append)
+        self.assertEqual(body, "ok")
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(sleeps, [3.0, 6.0])
+
+    def test_fetch_url_does_not_retry_permanent_4xx(self) -> None:
+        calls = []
+
+        def opener(req, timeout):
+            calls.append(1)
+            raise urllib.error.HTTPError(req.full_url, 404, "gone", {}, None)
+
+        with self.assertRaises(urllib.error.HTTPError):
+            refresh_common.fetch_url("https://x.test/a", opener=opener, sleep=lambda s: None)
+        self.assertEqual(len(calls), 1)
+
+    def test_option_value(self) -> None:
+        self.assertEqual(refresh_common.option_value(["--touch", "--status-out", "a.json"], "--status-out"), "a.json")
+        self.assertEqual(refresh_common.option_value(["--status-out=b.json"], "--status-out"), "b.json")
+        self.assertIsNone(refresh_common.option_value(["--touch"], "--status-out"))
+
+
+class VendorIsolationTests(unittest.TestCase):
+    CLAUDE = fetch_vf.CLAUDE_OVERVIEW_URL
+    GO = fetch_vf.OPENCODE_GO_URL
+
+    def _val(self, key: str, code: str, number: float, source: str, checked: str) -> dict:
+        return {
+            "id": f"{key}/{code}",
+            "code": code,
+            "number": number,
+            "text": None,
+            "source": source,
+            "checkedAt": checked,
+        }
+
+    def _existing(self) -> list[dict]:
+        opus = "claude/claude-opus-5-5"
+        haiku = "claude/claude-haiku-5"
+        return [
+            {
+                "vendorId": "claude",
+                "model": "claude-haiku-5",
+                "name": "Claude Haiku 5",
+                "efforts": [],
+                "values": [self._val(haiku, "inputPricePerMTok", 1, self.CLAUDE, "2026-11-01")],
+            },
+            {
+                "vendorId": "claude",
+                "model": "claude-opus-5-5",
+                "name": "Claude Opus 5.5",
+                "efforts": ["low", "high", "max"],
+                "values": [
+                    self._val(opus, "inputPricePerMTok", 5, self.CLAUDE, "2026-11-01"),
+                    self._val(opus, "monthlyLimitUSD/go", 20, self.GO, "2026-11-01"),
+                ],
+            },
+        ]
+
+    def _go_batch(self) -> list[dict]:
+        opus = "claude/claude-opus-5-5"
+        return [
+            {
+                "vendorId": "claude",
+                "model": "claude-opus-5-5",
+                "name": "Opus 5.5 (Go catalog)",
+                "efforts": [],
+                "values": [
+                    self._val(opus, "inputPricePerMTok", 6, self.GO, "2026-11-15"),
+                    self._val(opus, "monthlyLimitUSD/go", 20, self.GO, "2026-11-15"),
+                ],
+            }
+        ]
+
+    def test_failed_vendor_keeps_previous_values_name_and_efforts(self) -> None:
+        merged = fetch_vf.merge_models(
+            self._existing(),
+            [[], self._go_batch()],
+            today="2026-11-15",
+            held={0: {self.CLAUDE, fetch_vf.CLAUDE_EFFORT_URL}},
+        )
+        by_key = {f"{m['vendorId']}/{m['model']}": m for m in merged}
+        # Model only the failed vendor knew about is not dropped.
+        self.assertIn("claude/claude-haiku-5", by_key)
+        self.assertEqual(by_key["claude/claude-haiku-5"]["values"][0]["checkedAt"], "2026-11-01")
+        opus = by_key["claude/claude-opus-5-5"]
+        self.assertEqual(opus["name"], "Claude Opus 5.5")
+        self.assertEqual(opus["efforts"], ["low", "high", "max"])
+        vals = {v["code"]: v for v in opus["values"]}
+        # 1st-party value is carried forward instead of being replaced by the catalog value.
+        self.assertEqual(vals["inputPricePerMTok"]["number"], 5)
+        self.assertEqual(vals["inputPricePerMTok"]["source"], self.CLAUDE)
+        # Healthy vendor's unchanged value keeps its previous checkedAt.
+        self.assertEqual(vals["monthlyLimitUSD/go"]["checkedAt"], "2026-11-01")
+
+    def test_without_failures_unrefreshed_managed_models_are_dropped(self) -> None:
+        merged = fetch_vf.merge_models(self._existing(), [[], self._go_batch()], today="2026-11-15")
+        keys = {f"{m['vendorId']}/{m['model']}" for m in merged}
+        self.assertEqual(keys, {"claude/claude-opus-5-5"})
+
+    def test_collect_all_isolates_each_vendor(self) -> None:
+        def ok(today):
+            return self._go_batch()
+
+        def boom(today):
+            raise urllib.error.URLError("dns failure")
+
+        def empty(today):
+            return []
+
+        batches, held, status = fetch_vf.collect_all(
+            "2026-11-15",
+            collectors=[("a", {"https://a"}, boom), ("b", {"https://b"}, ok), ("c", {"https://c"}, empty)],
+        )
+        self.assertEqual(status["b"], "ok")
+        self.assertTrue(status["a"].startswith("error:"))
+        self.assertIn("0 models", status["c"])
+        self.assertEqual(held, {0: {"https://a"}, 2: {"https://c"}})
+        self.assertEqual([len(b) for b in batches], [0, 1, 0])
+
+    def test_main_aborts_without_writing_when_every_vendor_fails(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        facts = tmp / "model-facts.json"
+        shutil.copyfile(fetch_vf.FACTS_PATH, facts)
+        before = facts.read_text(encoding="utf-8")
+        orig_path, orig_fetch = fetch_vf.FACTS_PATH, fetch_vf.fetch_url
+        fetch_vf.FACTS_PATH = facts
+
+        def down(url):
+            raise urllib.error.URLError("offline")
+
+        fetch_vf.fetch_url = down
+        try:
+            with self.assertRaises(SystemExit):
+                fetch_vf.main(["--status-out", str(tmp / "status.json")])
+        finally:
+            fetch_vf.FACTS_PATH, fetch_vf.fetch_url = orig_path, orig_fetch
+        self.assertEqual(facts.read_text(encoding="utf-8"), before)
+        status = json.loads((tmp / "status.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["collector"], "facts")
+        self.assertTrue(all(v.startswith("error:") for v in status["sources"].values()))
+
+
+class BenchmarkFailureTests(unittest.TestCase):
+    FE = {"claude/claude-opus-5-5": ["high", "max"], "moonshotai/kimi-k3": []}
+
+    def _prev(self) -> dict:
+        return {
+            ("claude/claude-opus-5-5", "max"): {
+                "key": "claude/claude-opus-5-5",
+                "effort": "max",
+                "tier": "frontier",
+                "rank": {"simpleCoding": 1, "reasoning": 1},
+                "evidence": [
+                    _ev(fetch_aa.AA_URL, "AA 59", "2026-11-01"),
+                    _ev(fetch_aa.TBENCH_URL, "TB 64", "2026-11-01"),
+                    _ev(fetch_aa.SCALE_URL, "Scale 77", "2026-11-01"),
+                ],
+            },
+            ("moonshotai/kimi-k3", "default"): {
+                "key": "moonshotai/kimi-k3",
+                "effort": "default",
+                "tier": "mid",
+                "rank": {"simpleCoding": 2, "reasoning": 2},
+                "evidence": [_ev(fetch_aa.VALS_URL, "Vals 53", "2026-11-01")],
+            },
+            ("openai/gone-model", "default"): {
+                "key": "openai/gone-model",
+                "effort": "default",
+                "tier": "low",
+                "rank": {"simpleCoding": 3, "reasoning": 3},
+                "evidence": [_ev(fetch_aa.VALS_URL, "Vals 40", "2026-11-01")],
+            },
+        }
+
+    def test_failed_secondary_sources_are_carried_forward(self) -> None:
+        fresh = {
+            ("claude/claude-opus-5-5", "max"): {
+                "key": "claude/claude-opus-5-5",
+                "effort": "max",
+                "tier": "frontier",
+                "rank": {"simpleCoding": 1, "reasoning": 1},
+                "evidence": [
+                    _ev(fetch_aa.AA_URL, "AA 60", "2026-11-15"),
+                    _ev(fetch_aa.SCALE_URL, "Scale 78", "2026-11-15"),
+                ],
+            }
+        }
+        out = fetch_aa.carry_forward_failed_sources(
+            fresh, self._prev(), {fetch_aa.TBENCH_URL, fetch_aa.VALS_URL}, self.FE
+        )
+        opus = out[("claude/claude-opus-5-5", "max")]
+        self.assertEqual(
+            [e["source"] for e in opus["evidence"]],
+            [fetch_aa.AA_URL, fetch_aa.TBENCH_URL, fetch_aa.SCALE_URL],
+        )
+        self.assertEqual(opus["evidence"][1]["checkedAt"], "2026-11-01")
+        # Entry supported only by the failed source survives with its previous tier/rank.
+        kimi = out[("moonshotai/kimi-k3", "default")]
+        self.assertEqual((kimi["tier"], kimi["rank"]["reasoning"]), ("mid", 2))
+        # Entries whose model left model-facts.json are not resurrected.
+        self.assertNotIn(("openai/gone-model", "default"), out)
+
+    def test_no_failures_is_a_no_op(self) -> None:
+        fresh = {("x/y", "default"): {"evidence": []}}
+        self.assertIs(fetch_aa.carry_forward_failed_sources(fresh, self._prev(), set(), self.FE), fresh)
+
+    def test_main_keeps_entries_when_primary_source_is_down(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        facts, tiers = tmp / "model-facts.json", tmp / "model-tiers.json"
+        shutil.copyfile(fetch_aa.FACTS_PATH, facts)
+        shutil.copyfile(fetch_aa.TIERS_PATH, tiers)
+        before = json.loads(tiers.read_text(encoding="utf-8"))
+        orig = (fetch_aa.FACTS_PATH, fetch_aa.TIERS_PATH, fetch_aa.fetch_url)
+
+        def down(url):
+            raise urllib.error.URLError("offline")
+
+        fetch_aa.FACTS_PATH, fetch_aa.TIERS_PATH, fetch_aa.fetch_url = facts, tiers, down
+        try:
+            fetch_aa.main(["--status-out", str(tmp / "status.json")])
+        finally:
+            fetch_aa.FACTS_PATH, fetch_aa.TIERS_PATH, fetch_aa.fetch_url = orig
+        after = json.loads(tiers.read_text(encoding="utf-8"))
+        self.assertEqual(after, before)
+        status = json.loads((tmp / "status.json").read_text(encoding="utf-8"))["sources"]
+        self.assertTrue(status["artificialanalysis"].startswith("error:"))
+        self.assertTrue(status["scale"].startswith("skipped"))
+
+
+class HoldTierShiftTests(unittest.TestCase):
+    def _tiers(self, tier: str, note: str, checked: str, date_: str) -> dict:
+        return {
+            "version": 1,
+            "date": date_,
+            "factsDate": "2026-11-10",
+            "axis": ["simpleCoding", "reasoning"],
+            "entries": [
+                {
+                    "key": "claude/claude-opus-5-5",
+                    "effort": "max",
+                    "tier": tier,
+                    "rank": {"simpleCoding": 1, "reasoning": 1},
+                    "evidence": [_ev(fetch_aa.AA_URL, note, checked)],
+                }
+            ],
+        }
+
+    def test_hold_keeps_old_tier_but_refreshes_evidence(self) -> None:
+        old = self._tiers("mid", "AA 44", "2026-11-01", "2026-11-01")
+        new = self._tiers("frontier", "AA 46", "2026-11-15", "2026-11-15")
+        held = hold_tier_shifts.hold_shifts(old, new, [["claude/claude-opus-5-5", "max"]])
+        entry = held["entries"][0]
+        self.assertEqual(entry["tier"], "mid")
+        self.assertEqual(entry["evidence"][0]["note"], "AA 46")
+        self.assertEqual(held["date"], "2026-11-15")
+        self.assertEqual(new["entries"][0]["tier"], "frontier")  # input untouched
+
+    def test_pending_review_does_not_churn_main(self) -> None:
+        # Day 2: main already holds the refreshed evidence; only the flip differs.
+        main = self._tiers("mid", "AA 46", "2026-11-15", "2026-11-15")
+        rerun = self._tiers("frontier", "AA 46", "2026-11-16", "2026-11-16")
+        held = hold_tier_shifts.hold_shifts(main, rerun, [["claude/claude-opus-5-5", "max"]])
+        self.assertEqual(held, main)
 
 
 if __name__ == "__main__":

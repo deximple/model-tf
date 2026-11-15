@@ -2,11 +2,14 @@ name: refresh
 
 on:
   schedule:
-    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+    # Daily at 21:37 UTC (06:37 KST). Deliberately off the top of the hour:
+    # GitHub delays (and under load drops) scheduled runs queued at :00 — the
+    # old "0 6 * * 1" weekly run started 8h42m late on 2026-11-09.
+    - cron: "37 21 * * *"
   workflow_dispatch:
     inputs:
       mode:
-        description: "Apply mode: conditional (auto-commit to main unless single-source tier flip), direct (always commit to main), or pr (always open PR)"
+        description: "Apply mode: conditional (commit to main; hold only single-source tier flips for a review PR), direct (always commit everything to main), or pr (put everything in a review PR)"
         required: false
         default: "conditional"
         type: choice
@@ -20,19 +23,35 @@ on:
         default: false
         type: boolean
 
+# Never run two refreshes at once (schedule + manual dispatch would race on push).
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 45 # generous: each fetch retries up to 3x with backoff
+    permissions:
+      contents: write # push refreshed data to main
+      pull-requests: write # open/close the tier review PR
+      issues: write # open/update/close the refresh-alert issue
+      actions: write # dispatch validate.yml + keep this schedule enabled
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      MODE: ${{ inputs.mode || 'conditional' }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      PR_BRANCH: refresh/model-data
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -41,8 +60,10 @@ jobs:
 
       - name: Determine whether heartbeat touch is needed (>45d since last commit)
         id: touch_check
+        env:
+          FORCE_TOUCH: ${{ inputs.touch }}
         run: |
-          if [ "${{ inputs.touch }}" = "true" ]; then
+          if [ "$FORCE_TOUCH" = "true" ]; then
             echo "flag=--touch" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -56,11 +77,14 @@ jobs:
             echo "flag=" >> "$GITHUB_OUTPUT"
           fi
 
+      # Each collector isolates per-source failures: a broken vendor page or
+      # leaderboard keeps its previous data and is reported in status-*.json,
+      # while every healthy source still refreshes.
       - name: Refresh vendor facts from official docs
-        run: python sources/fetch_vendor_facts.py ${{ steps.touch_check.outputs.flag }}
+        run: python sources/fetch_vendor_facts.py ${{ steps.touch_check.outputs.flag }} --status-out "$RUNNER_TEMP/status-facts.json"
 
       - name: Refresh benchmark-sourced tier entries
-        run: python sources/fetch_artificial_analysis.py ${{ steps.touch_check.outputs.flag }}
+        run: python sources/fetch_artificial_analysis.py ${{ steps.touch_check.outputs.flag }} --status-out "$RUNNER_TEMP/status-tiers.json"
 
       - name: Validate refreshed data
         run: python scripts/validate.py
@@ -71,22 +95,29 @@ jobs:
       - name: Build summary, staleness report, and gate decision
         id: gate
         run: |
-          python sources/check_staleness.py --diff-head --gate-out "${{ runner.temp }}/gate.json" | tee "${{ runner.temp }}/pr-body.md"
-          cat "${{ runner.temp }}/pr-body.md" >> "$GITHUB_STEP_SUMMARY"
-          requires_pr=$(python -c 'import json,sys; print(str(json.load(open(sys.argv[1]))["requires_pr"]).lower())' "${{ runner.temp }}/gate.json")
-          mode="${{ inputs.mode || 'conditional' }}"
-          if [ "$mode" = "pr" ]; then
-            echo "target=pr" >> "$GITHUB_OUTPUT"
-          elif [ "$mode" = "direct" ]; then
-            echo "target=main" >> "$GITHUB_OUTPUT"
-          elif [ "$requires_pr" = "true" ]; then
-            echo "target=pr" >> "$GITHUB_OUTPUT"
-          else
-            echo "target=main" >> "$GITHUB_OUTPUT"
-          fi
+          python sources/check_staleness.py --diff-head --gate-out "$RUNNER_TEMP/gate.json" | tee "$RUNNER_TEMP/pr-body.md"
+          cat "$RUNNER_TEMP/pr-body.md" >> "$GITHUB_STEP_SUMMARY"
+          requires_pr=$(jq -r '.requires_pr' "$RUNNER_TEMP/gate.json")
+          case "$MODE" in
+            pr) target=pr ;;
+            direct) target=main ;;
+            *) if [ "$requires_pr" = "true" ]; then target=split; else target=main; fi ;;
+          esac
+          echo "Apply target: $target (mode=$MODE, requires_pr=$requires_pr)"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
 
-      - name: Commit and push directly to main when safe
-        if: steps.gate.outputs.target == 'main'
+      # conditional mode + single-source tier flip: everything except the
+      # flagged tier values still lands on main, so a pending review PR never
+      # freezes the rest of the data.
+      - name: Hold single-source tier flips back from main
+        if: steps.gate.outputs.target == 'split'
+        run: |
+          python sources/hold_tier_shifts.py --gate "$RUNNER_TEMP/gate.json" --full-out "$RUNNER_TEMP/model-tiers.full.json"
+          python scripts/validate.py
+
+      - name: Commit and push to main
+        id: push_main
+        if: steps.gate.outputs.target == 'main' || steps.gate.outputs.target == 'split'
         run: |
           if git diff --quiet model-facts.json model-tiers.json; then
             echo "No changes to commit."
@@ -96,17 +127,150 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add model-facts.json model-tiers.json
           git commit -m "chore: refresh model facts and tiers"
-          git push origin HEAD:main
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Push attempt ${attempt} rejected; rebasing onto latest main"
+            sleep $(( attempt * 5 ))
+            git pull --rebase origin main
+          done
+          echo "::error::Could not push the refresh commit to main after 3 attempts"
+          exit 1
 
-      - name: Open pull request when single-source tier shift requires review
-        if: steps.gate.outputs.target == 'pr'
+      - name: Close superseded tier review PR
+        if: steps.gate.outputs.target == 'main'
+        run: |
+          state=$(gh pr view "$PR_BRANCH" --json state --jq .state 2>/dev/null || true)
+          if [ "$state" = "OPEN" ]; then
+            gh pr close "$PR_BRANCH" --delete-branch \
+              --comment "Superseded by ${RUN_URL}: the gated tier change is no longer present (or was applied directly), so main is already up to date."
+          fi
+
+      - name: Prepare review PR contents
+        if: steps.gate.outputs.target == 'pr' || steps.gate.outputs.target == 'split'
+        run: |
+          body="$RUNNER_TEMP/pr-final.md"
+          if [ "${{ steps.gate.outputs.target }}" = "split" ]; then
+            cp "$RUNNER_TEMP/model-tiers.full.json" model-tiers.json
+            {
+              echo "> Only the tier changes below are held for review. Every other fact, rank, and evidence update from this refresh was already committed to \`main\`."
+              echo
+              echo "## Single-source tier changes awaiting review"
+              jq -r '.single_source_tier_shifts[] | "- " + .' "$RUNNER_TEMP/gate.json"
+              echo
+              echo "Merge to accept, or close to keep the current tiers (a later refresh reopens this PR if the shift persists)."
+              echo
+              echo "<details><summary>Full refresh summary</summary>"
+              echo
+              cat "$RUNNER_TEMP/pr-body.md"
+              echo
+              echo "</details>"
+            } > "$body"
+          else
+            cp "$RUNNER_TEMP/pr-body.md" "$body"
+          fi
+
+      - name: Open pull request for tier review
+        id: open_pr
+        if: steps.gate.outputs.target == 'pr' || steps.gate.outputs.target == 'split'
+        continue-on-error: true # reported in the alert issue below
         uses: peter-evans/create-pull-request@v8
         with:
-          branch: refresh/model-data
+          branch: ${{ env.PR_BRANCH }}
           delete-branch: true
           title: "chore: review model tier shift"
           commit-message: "chore: refresh model facts and tiers"
-          body-path: ${{ runner.temp }}/pr-body.md
+          body-path: ${{ runner.temp }}/pr-final.md
           add-paths: |
             model-facts.json
             model-tiers.json
+
+      # Pushes and PRs made with GITHUB_TOKEN do not trigger push/pull_request
+      # workflows, so validate.yml never ran on bot commits. workflow_dispatch is
+      # the documented exception, so trigger it explicitly for a visible check.
+      - name: Run validate workflow on bot-authored commits
+        if: steps.push_main.outputs.pushed == 'true' || steps.open_pr.outputs.pull-request-operation == 'created' || steps.open_pr.outputs.pull-request-operation == 'updated'
+        env:
+          PUSHED: ${{ steps.push_main.outputs.pushed }}
+          PR_OP: ${{ steps.open_pr.outputs.pull-request-operation }}
+        run: |
+          if [ "$PUSHED" = "true" ]; then
+            gh workflow run validate.yml --ref main || echo "::warning::could not dispatch validate.yml on main"
+          fi
+          if [ "$PR_OP" = "created" ] || [ "$PR_OP" = "updated" ]; then
+            gh workflow run validate.yml --ref "$PR_BRANCH" || echo "::warning::could not dispatch validate.yml on $PR_BRANCH"
+          fi
+
+      # Never fail silently: any failed step, degraded source, or PR problem
+      # opens (or updates) one "refresh-alert" issue; a clean run closes it.
+      - name: Report refresh health (alert issue)
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          PR_OUTCOME: ${{ steps.open_pr.outcome }}
+        run: |
+          problems="$RUNNER_TEMP/problems.md"
+          : > "$problems"
+          if [ "$JOB_STATUS" != "success" ]; then
+            echo "- Refresh job status: **${JOB_STATUS}** — a step failed, nothing was committed. See the run log." >> "$problems"
+          fi
+          for f in "$RUNNER_TEMP"/status-facts.json "$RUNNER_TEMP"/status-tiers.json; do
+            [ -f "$f" ] || continue
+            jq -r '.collector as $c | .sources | to_entries[] | select(.value != "ok") | "- `\($c)/\(.key)`: \(.value)"' "$f" >> "$problems"
+          done
+          if [ "$PR_OUTCOME" = "failure" ]; then
+            echo "- Opening the tier review PR failed. If the log says \"GitHub Actions is not permitted to create or approve pull requests\", enable it under Settings → Actions → General → Workflow permissions." >> "$problems"
+          fi
+
+          label=refresh-alert
+          gh label create "$label" --color B60205 --description "Automated data refresh needs attention" --force >/dev/null 2>&1 || true
+          existing=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty' || true)
+
+          if [ ! -s "$problems" ]; then
+            echo "All sources healthy."
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --comment "Recovered: ${RUN_URL} completed with every source healthy."
+            fi
+            exit 0
+          fi
+
+          while IFS= read -r line; do echo "::warning::${line#- }"; done < "$problems"
+          { echo "## Refresh health problems"; cat "$problems"; } >> "$GITHUB_STEP_SUMMARY"
+
+          # Fingerprint = which sources/steps are failing (not the error text),
+          # so a long outage produces one comment, not one per day.
+          fp=$(sed -E 's/: .*//' "$problems" | sort | sha256sum | cut -c1-16)
+          body="$RUNNER_TEMP/alert.md"
+          {
+            echo "Run: ${RUN_URL}"
+            echo
+            cat "$problems"
+            echo
+            echo "Failed sources keep their previous values (old \`checkedAt\`) until they recover; healthy sources were still refreshed. This issue closes automatically on the next fully healthy run."
+            echo
+            echo "To debug locally: \`python3 sources/fetch_vendor_facts.py --status-out /tmp/facts.json\` and \`python3 sources/fetch_artificial_analysis.py --status-out /tmp/tiers.json\`."
+            echo
+            echo "<!-- refresh-alert-fp:${fp} -->"
+          } > "$body"
+
+          if [ -z "$existing" ]; then
+            gh issue create --title "refresh: automated data refresh needs attention" --label "$label" --body-file "$body"
+          else
+            last=$(gh issue view "$existing" --json body,comments --jq '([.body] + [.comments[].body]) | map(select(test("refresh-alert-fp:"))) | last // ""')
+            if printf '%s' "$last" | grep -q "refresh-alert-fp:${fp}"; then
+              echo "Alert #${existing} already describes these problems; not commenting again."
+            else
+              gh issue comment "$existing" --body-file "$body"
+            fi
+          fi
+
+      # Public repos auto-disable scheduled workflows after 60 days without
+      # repository activity. The --touch heartbeat only commits when a run
+      # succeeds, so also re-enable via the API on every run (no commit needed).
+      - name: Keep scheduled workflow enabled
+        if: always()
+        run: |
+          gh api -X PUT "repos/${GH_REPO}/actions/workflows/refresh.yml/enable" \
+            || echo "::warning::keepalive API call failed"

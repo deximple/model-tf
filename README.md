@@ -21,7 +21,7 @@ Three layers exist across the ecosystem; this repo owns the first two:
 - `schema/` — JSON Schemas; CI validates every change.
 - `sources/` — automated collectors for official vendor docs and 4 benchmark leaderboards.
 - `scripts/validate.py` — schema + cross-file checks (run locally too).
-- `tests/` — unit tests for schemas, validator, collectors, and auto-merge gating.
+- `tests/` — unit tests for schemas, validator, collectors, source-failure handling, and auto-merge gating.
 
 ## Conventions
 
@@ -52,24 +52,43 @@ Three layers exist across the ecosystem; this repo owns the first two:
 
 ## Hands-Free Updating (`refresh.yml`)
 
-- Runs every Monday 06:00 UTC (and via `workflow_dispatch`):
+- Runs **daily at 21:37 UTC (06:37 KST)** and via `workflow_dispatch`. The
+  minute is deliberately off the hour: GitHub delays (and under load drops)
+  scheduled runs queued at `:00`.
   1. `sources/fetch_vendor_facts.py` refreshes `model-facts.json` from official
      Anthropic, OpenAI/ChatGPT, Google Gemini, xAI Grok, Z.ai GLM, and OpenCode
      Go documentation.
   2. `sources/fetch_artificial_analysis.py` refreshes `model-tiers.json` from
      Artificial Analysis, Terminal-Bench, Vals AI, and Scale AI SEAL.
   3. `scripts/validate.py` and `tests/` gate the result.
-  4. **Conditional auto-commit (`mode=conditional`, default):**
-     - Fact updates, new model additions, rank updates, and tier changes
-       confirmed by **≥2 independent benchmark sources** are committed and
-       pushed **directly to `main`**.
-     - If an existing entry changes `tier` (`frontier`/`mid`/`low`) based on a
-       **single** benchmark source only, a review PR is opened on
-       `refresh/model-data` instead.
-  5. **45-day heartbeat (`--touch`):** if no commit has landed on `main` in 45
-     days, the workflow runs with `--touch` after live verification so
-     `checkedAt` stays fresh and GitHub never pauses the scheduled cron at 60
-     days of inactivity.
+  4. **Conditional apply (`mode=conditional`, default):**
+     - Fact updates, new models, rank updates, and tier changes confirmed by
+       **≥2 independent benchmark sources** are pushed **directly to `main`**.
+     - If an existing entry changes `tier` based on a **single** benchmark
+       source, only that tier value is held back: everything else still lands
+       on `main`, and a review PR on `refresh/model-data` contains just the
+       held tier flips. A pending PR therefore never freezes the data. The PR
+       is closed automatically once the shift disappears or gets confirmed.
+     - `mode=direct` commits everything to `main`; `mode=pr` puts everything
+       in the review PR.
+- **Source failures never stop the refresh.** Every fetch retries transient
+  errors (5xx/429/timeouts) with backoff. If one vendor page or leaderboard
+  still fails, or parses to zero rows, its previous values and evidence are
+  kept (with their old `checkedAt`) and every healthy source still refreshes.
+- **Never fails silently.** A failed step, a degraded source, or a PR that
+  cannot be opened creates (or updates) one issue labelled `refresh-alert`.
+  The next fully healthy run closes it automatically.
+- **CI on bot commits.** Pushes and PRs made with `GITHUB_TOKEN` do not trigger
+  `push`/`pull_request` workflows, so the refresh explicitly dispatches
+  `validate.yml` for the commits and PRs it creates.
+- **Schedule keepalive.** GitHub disables schedules in public repos after 60
+  days without activity. Every run re-enables the workflow through the API,
+  and the **45-day `--touch` heartbeat** also bumps `checkedAt` after live
+  verification.
+- One-time setting for the review-PR path: *Settings → Actions → General →
+  Workflow permissions → "Allow GitHub Actions to create and approve pull
+  requests"*. If it is off, the PR step fails and the alert issue says so;
+  all `main` updates still land.
 
 ## Compatibility
 

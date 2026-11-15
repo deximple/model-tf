@@ -88,10 +88,16 @@ def evaluate_tier_gate(
 ) -> dict[str, Any]:
     """Check whether any existing entry changed tier with fewer than 2 benchmark sources."""
     if old_tiers is None:
-        return {"requires_pr": False, "single_source_tier_shifts": [], "confirmed_tier_shifts": []}
+        return {
+            "requires_pr": False,
+            "single_source_tier_shifts": [],
+            "single_source_idents": [],
+            "confirmed_tier_shifts": [],
+        }
     old_t = {(e["key"], e["effort"]): e for e in old_tiers["entries"]}
     new_t = {(e["key"], e["effort"]): e for e in new_tiers["entries"]}
     single_source: list[str] = []
+    single_idents: list[list[str]] = []
     confirmed: list[str] = []
     for ident in sorted(set(old_t) & set(new_t)):
         oe, ne = old_t[ident], new_t[ident]
@@ -101,9 +107,11 @@ def evaluate_tier_gate(
                 confirmed.append(desc)
             else:
                 single_source.append(desc)
+                single_idents.append([ident[0], ident[1]])
     return {
         "requires_pr": bool(single_source),
         "single_source_tier_shifts": single_source,
+        "single_source_idents": single_idents,
         "confirmed_tier_shifts": confirmed,
     }
 
