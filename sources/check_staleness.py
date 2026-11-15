@@ -17,6 +17,9 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from refresh_common import read_failed_urls  # noqa: E402
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -31,6 +34,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--diff-head",
         action="store_true",
         help="Include a human-review summary comparing working tree files against HEAD.",
+    )
+    parser.add_argument(
+        "--tiers-status",
+        type=str,
+        default=None,
+        help="status JSON from fetch_artificial_analysis.py --status-out; evidence from its "
+        "failed_urls was carried forward, not re-verified, and does not count toward the gate.",
     )
     parser.add_argument(
         "--gate-out",
@@ -70,7 +80,7 @@ def stale_tier_items(tiers: dict[str, Any], today: date, days: int) -> list[tupl
     return stale
 
 
-def _load_head_json(rel_path: str) -> dict[str, Any] | None:
+def load_head_json(rel_path: str) -> dict[str, Any] | None:
     try:
         out = subprocess.check_output(
             ["git", "show", f"HEAD:{rel_path}"],
@@ -84,26 +94,44 @@ def _load_head_json(rel_path: str) -> dict[str, Any] | None:
 
 
 def evaluate_tier_gate(
-    old_tiers: dict[str, Any] | None, new_tiers: dict[str, Any]
+    old_tiers: dict[str, Any] | None,
+    new_tiers: dict[str, Any],
+    unverified_sources: set[str] | None = None,
 ) -> dict[str, Any]:
-    """Check whether any existing entry changed tier with fewer than 2 benchmark sources."""
+    """Check whether any existing entry changed tier with fewer than 2 benchmark sources.
+
+    Evidence whose source is in ``unverified_sources`` (carried forward because
+    that source failed this run) does not count as a confirming source.
+    """
+    unverified = unverified_sources or set()
     if old_tiers is None:
-        return {"requires_pr": False, "single_source_tier_shifts": [], "confirmed_tier_shifts": []}
+        return {
+            "requires_pr": False,
+            "single_source_tier_shifts": [],
+            "single_source_idents": [],
+            "confirmed_tier_shifts": [],
+        }
     old_t = {(e["key"], e["effort"]): e for e in old_tiers["entries"]}
     new_t = {(e["key"], e["effort"]): e for e in new_tiers["entries"]}
     single_source: list[str] = []
+    single_idents: list[list[str]] = []
     confirmed: list[str] = []
     for ident in sorted(set(old_t) & set(new_t)):
         oe, ne = old_t[ident], new_t[ident]
         if oe["tier"] != ne["tier"]:
             desc = f"{ident[0]} ({ident[1]}): {oe['tier']} -> {ne['tier']}"
-            if len(ne.get("evidence") or []) >= 2:
+            verified = [
+                e for e in (ne.get("evidence") or []) if e.get("source") not in unverified
+            ]
+            if len(verified) >= 2:
                 confirmed.append(desc)
             else:
                 single_source.append(desc)
+                single_idents.append([ident[0], ident[1]])
     return {
         "requires_pr": bool(single_source),
         "single_source_tier_shifts": single_source,
+        "single_source_idents": single_idents,
         "confirmed_tier_shifts": confirmed,
     }
 
@@ -193,11 +221,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     stale += stale_tier_items(tiers, today, days)
 
-    old_facts = _load_head_json("model-facts.json") if (ns.diff_head or ns.gate_out) else None
-    old_tiers = _load_head_json("model-tiers.json") if (ns.diff_head or ns.gate_out) else None
+    old_facts = load_head_json("model-facts.json") if (ns.diff_head or ns.gate_out) else None
+    old_tiers = load_head_json("model-tiers.json") if (ns.diff_head or ns.gate_out) else None
 
     if ns.gate_out:
-        gate = evaluate_tier_gate(old_tiers, tiers)
+        gate = evaluate_tier_gate(
+            old_tiers, tiers, unverified_sources=read_failed_urls(ns.tiers_status)
+        )
         Path(ns.gate_out).write_text(json.dumps(gate, indent=2) + "\n", encoding="utf-8")
 
     if ns.diff_head:

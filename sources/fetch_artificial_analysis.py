@@ -18,18 +18,27 @@ Rules:
     and reasoning scores across tracked setups.
   - Preserves existing checkedAt and bundle date when no tier, rank, or evidence
     note changed (pass --touch to force-bump).
+  - Source failures never delete data: if a secondary leaderboard fails to
+    fetch or parses to zero rows, its previous evidence (old checkedAt) is
+    carried forward and entries that only it supported are kept; if the
+    primary Artificial Analysis leaderboard fails, existing entries are kept
+    as-is (only re-synced to model-facts.json). Failures are reported via
+    --status-out so the workflow can raise an alert issue.
 
-Stdlib only. Run from anywhere: python3 sources/fetch_artificial_analysis.py [--touch]
+Stdlib only. Run from anywhere:
+  python3 sources/fetch_artificial_analysis.py [--touch] [--status-out PATH]
 """
 
 import html
 import json
 import re
 import sys
-import urllib.request
 from datetime import date
 from pathlib import Path
 from typing import Any
+
+from refresh_common import describe_error, option_value, write_status
+from refresh_common import fetch_url as _fetch_with_retry
 
 ROOT = Path(__file__).resolve().parent.parent
 FACTS_PATH = ROOT / "model-facts.json"
@@ -42,6 +51,8 @@ VALS_URL = "https://www.vals.ai/benchmarks"
 SCALE_URL = "https://scale.com/leaderboard"
 
 MANAGED_BENCHMARK_SOURCES = {AA_URL, TBENCH_URL, VALS_URL, SCALE_URL}
+# Canonical evidence order (matches the order build_aa_entries appends sources).
+SOURCE_ORDER = {AA_URL: 0, TBENCH_URL: 1, VALS_URL: 2, SCALE_URL: 3}
 
 # Provisional bands on the 0-100 Intelligence Index / normalized score scale.
 FRONTIER_MIN = 50
@@ -125,17 +136,7 @@ NORM_RE = re.compile(r"[^a-z0-9]+")
 
 
 def fetch_url(url: str) -> str:
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "model-tf-refresh/1.0"
-            )
-        },
-    )
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return resp.read().decode("utf-8", errors="replace")
+    return _fetch_with_retry(url, timeout=60)
 
 
 def fetch_leaderboard() -> str:
@@ -646,17 +647,82 @@ def build_aa_entries(
     return entries
 
 
-def _safe_fetch_list(label: str, fn: Any, url: str) -> list[dict[str, Any]]:
+def _safe_fetch_list(label: str, fn: Any, url: str) -> tuple[list[dict[str, Any]], str | None]:
+    """Fetch + parse one secondary leaderboard. Returns (rows, error-or-None).
+
+    Zero parsed rows counts as a failure: it almost always means the page
+    layout changed, and silently treating it as "no data" would drop evidence.
+    """
     try:
-        return fn(fetch_url(url))
-    except Exception as exc:
-        print(f"WARN: {label} fetch failed ({exc}); continuing with remaining sources")
-        return []
+        rows = fn(fetch_url(url))
+        if not rows:
+            raise ValueError("parsed 0 rows (page layout may have changed)")
+        return rows, None
+    except Exception as exc:  # noqa: BLE001 - one source must not stop the others
+        msg = describe_error(exc)
+        print(
+            f"WARN: {label} fetch failed ({msg}); carrying forward its previous evidence",
+            file=sys.stderr,
+        )
+        return [], msg
+
+
+# (label, status slug, parser, url) for the secondary leaderboards.
+SECONDARY_SOURCES = (
+    ("Terminal-Bench", "tbench", parse_tbench_leaderboard, TBENCH_URL),
+    ("Vals AI", "vals", parse_vals_benchmarks, VALS_URL),
+    ("Scale SEAL", "scale", parse_scale_leaderboard, SCALE_URL),
+)
+
+
+def _entry_is_valid(key: str, effort: str, fact_efforts: dict[str, list[str]]) -> bool:
+    return key in fact_efforts and _valid_effort(effort, fact_efforts[key])
+
+
+def carry_forward_failed_sources(
+    entries: dict[tuple[str, str], dict[str, Any]],
+    existing_aa: dict[tuple[str, str], dict[str, Any]],
+    failed_sources: set[str],
+    fact_efforts: dict[str, list[str]],
+) -> dict[tuple[str, str], dict[str, Any]]:
+    """Re-attach previous evidence from sources that failed this run.
+
+    - Entries still produced by healthy sources get the failed source's previous
+      evidence item back (with its old checkedAt, so staleness stays honest).
+    - Entries that vanished but had evidence from a failed source are kept with
+      their previous tier/rank and only that source's evidence, instead of being
+      deleted because of an outage.
+    """
+    if not failed_sources:
+        return entries
+    out = dict(entries)
+    for ident, prev in existing_aa.items():
+        prev_failed_ev = [
+            dict(e) for e in (prev.get("evidence") or []) if e.get("source") in failed_sources
+        ]
+        if not prev_failed_ev or not _entry_is_valid(ident[0], ident[1], fact_efforts):
+            continue
+        if ident in out:
+            cur = out[ident]
+            have = {e["source"] for e in cur["evidence"]}
+            merged_ev = cur["evidence"] + [e for e in prev_failed_ev if e["source"] not in have]
+            merged_ev.sort(key=lambda e: SOURCE_ORDER.get(e["source"], len(SOURCE_ORDER)))
+            out[ident] = {**cur, "evidence": merged_ev}
+        else:
+            out[ident] = {
+                "key": prev["key"],
+                "effort": prev["effort"],
+                "tier": prev["tier"],
+                "rank": dict(prev["rank"]),
+                "evidence": prev_failed_ev,
+            }
+    return out
 
 
 def main(argv: list[str] | None = None) -> None:
     args = argv if argv is not None else sys.argv[1:]
     touch = "--touch" in args
+    status_out = option_value(args, "--status-out")
 
     facts: dict[str, Any] = json.loads(FACTS_PATH.read_text(encoding="utf-8"))
     tiers: dict[str, Any] = json.loads(TIERS_PATH.read_text(encoding="utf-8"))
@@ -664,36 +730,68 @@ def main(argv: list[str] | None = None) -> None:
         f"{m['vendorId']}/{m['model']}": list(m["efforts"]) for m in facts["models"]
     }
     today = date.today().isoformat()
-
-    page = fetch_leaderboard()
-    rsc_rows = parse_rsc_models(page)
-    rows: list[tuple[str, float]] | list[tuple[str, float, float | None]] = (
-        rsc_rows if rsc_rows else parse_rows(page)
-    )
-    if not rows:
-        sys.exit("no AA leaderboard rows parsed; aborting without changes")
-
-    tbench_rows = _safe_fetch_list("Terminal-Bench", parse_tbench_leaderboard, TBENCH_URL)
-    vals_rows = _safe_fetch_list("Vals AI", parse_vals_benchmarks, VALS_URL)
-    scale_rows = _safe_fetch_list("Scale SEAL", parse_scale_leaderboard, SCALE_URL)
+    status: dict[str, str] = {}
 
     existing_aa = {
         (e["key"], e["effort"]): e for e in tiers["entries"] if is_aa_managed(e)
     }
-    aa_entries = build_aa_entries(
-        rows,
-        fact_efforts,
-        today,
-        existing_aa=existing_aa,
-        touch=touch,
-        facts_models=facts["models"],
-        tbench_rows=tbench_rows,
-        vals_rows=vals_rows,
-        scale_rows=scale_rows,
-    )
+
+    rows: list[tuple[str, float]] | list[tuple[str, float, float | None]] = []
+    try:
+        page = fetch_leaderboard()
+        rsc_rows = parse_rsc_models(page)
+        rows = rsc_rows if rsc_rows else parse_rows(page)
+        if not rows:
+            raise ValueError("parsed 0 leaderboard rows (page layout may have changed)")
+        status["artificialanalysis"] = "ok"
+    except Exception as exc:  # noqa: BLE001 - keep facts sync working without AA
+        msg = describe_error(exc)
+        print(
+            f"WARN: Artificial Analysis fetch failed ({msg}); keeping existing tier entries",
+            file=sys.stderr,
+        )
+        status["artificialanalysis"] = f"error: {msg}"
+        rows = []
+
+    secondary: dict[str, list[dict[str, Any]]] = {}
+    failed_sources: set[str] = set()
+    if rows:
+        for label, slug, fn, url in SECONDARY_SOURCES:
+            secondary[slug], err = _safe_fetch_list(label, fn, url)
+            status[slug] = "ok" if err is None else f"error: {err}"
+            if err is not None:
+                failed_sources.add(url)
+        tbench_rows = secondary["tbench"]
+        vals_rows = secondary["vals"]
+        scale_rows = secondary["scale"]
+
+        aa_entries = build_aa_entries(
+            rows,
+            fact_efforts,
+            today,
+            existing_aa=existing_aa,
+            touch=touch,
+            facts_models=facts["models"],
+            tbench_rows=tbench_rows,
+            vals_rows=vals_rows,
+            scale_rows=scale_rows,
+        )
+        aa_entries = carry_forward_failed_sources(
+            aa_entries, existing_aa, failed_sources, fact_efforts
+        )
+        regenerated = list(aa_entries.values())
+    else:
+        # Primary source down: keep yesterday's benchmark entries, dropping only
+        # those that no longer match model-facts.json so validation still passes.
+        for _, slug, _, _ in SECONDARY_SOURCES:
+            status[slug] = "skipped: primary source unavailable"
+        failed_sources = set(MANAGED_BENCHMARK_SOURCES)
+        regenerated = [
+            e for e in existing_aa.values() if _entry_is_valid(e["key"], e["effort"], fact_efforts)
+        ]
+    write_status(status_out, "tiers", status, failed_urls=failed_sources)
 
     preserved = [e for e in tiers["entries"] if not is_aa_managed(e)]
-    regenerated = list(aa_entries.values())
     merged = preserved + regenerated
     merged.sort(key=lambda e: (e["key"], e["effort"]))
 
@@ -713,8 +811,9 @@ def main(argv: list[str] | None = None) -> None:
     print(
         f"model-tiers.json: {len(preserved)} preserved + "
         f"{len(regenerated)} benchmark-managed = {len(merged)} entries "
-        f"(aa={len(rows)}, tbench={len(tbench_rows)}, vals={len(vals_rows)}, "
-        f"scale={len(scale_rows)}, changed={changed})"
+        f"(aa={len(rows)}, "
+        + ", ".join(f"{slug}={len(secondary.get(slug, []))}" for _, slug, _, _ in SECONDARY_SOURCES)
+        + f", changed={changed})"
     )
 
 

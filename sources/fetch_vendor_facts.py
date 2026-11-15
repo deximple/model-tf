@@ -24,19 +24,26 @@ Rules:
     unchanged when no model or value changed (pass --touch to force-bump).
   - Preserves any models or values whose source URL is outside the managed
     vendor documentation URLs so hand-curated facts are never lost.
-  - Fails fast without writing if any automated source returns zero models.
+  - Each vendor is collected in isolation: if one vendor's docs fail to fetch
+    or parse (zero models), that vendor's previous values are kept unchanged
+    (old checkedAt) and the other vendors still refresh. The failure is
+    reported via --status-out so the workflow can raise an alert issue.
+  - Exits non-zero without writing only when every vendor fails.
 
-Stdlib only. Run from anywhere: python3 sources/fetch_vendor_facts.py [--touch]
+Stdlib only. Run from anywhere:
+  python3 sources/fetch_vendor_facts.py [--touch] [--status-out PATH]
 """
 
 import html
 import json
 import re
 import sys
-import urllib.request
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
+
+from refresh_common import describe_error, option_value, write_status
+from refresh_common import fetch_url as _fetch_with_retry
 
 ROOT = Path(__file__).resolve().parent.parent
 FACTS_PATH = ROOT / "model-facts.json"
@@ -205,17 +212,7 @@ CELL_RE = re.compile(r"<t[dh][^>]*>(.*?)</t[dh]>", re.S)
 
 
 def fetch_url(url: str) -> str:
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "model-tf-refresh/1.0"
-            )
-        },
-    )
-    with urllib.request.urlopen(req, timeout=45) as resp:
-        return resp.read().decode("utf-8", errors="replace")
+    return _fetch_with_retry(url, timeout=45)
 
 
 def infer_maker(model_id: str) -> str:
@@ -1000,8 +997,18 @@ def merge_models(
     collected_batches: list[list[dict[str, Any]]],
     today: str,
     touch: bool = False,
+    held: dict[int, set[str]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Merge collected models with existing models, preserving checkedAt when unchanged."""
+    """Merge collected models with existing models, preserving checkedAt when unchanged.
+
+    ``held`` maps a batch index (priority position in ``collected_batches``) to
+    the source URLs of a vendor whose collection failed this run. That vendor's
+    batch is empty; its previous values are carried forward unchanged and win
+    over lower-priority catalog values with the same id, so a transient outage
+    never rewrites a 1st-party value with a catalog one.
+    """
+    held = held or {}
+    held_rank = {src: idx for idx, srcs in held.items() for src in srcs}
     existing_by_key = {(m["vendorId"], m["model"]): m for m in existing_models}
     existing_values: dict[str, dict[str, Any]] = {}
     for m in existing_models:
@@ -1009,12 +1016,15 @@ def merge_models(
             existing_values[v["id"]] = v
 
     merged: dict[tuple[str, str], dict[str, Any]] = {}
+    seeded_by: dict[tuple[str, str], int] = {}
+    value_batch: dict[str, int] = {}  # value id -> batch index that supplied it
 
     # Seed from collected batches in priority order (1st-party makers first, OpenCode Go last).
-    for batch in collected_batches:
+    for batch_idx, batch in enumerate(collected_batches):
         for m in batch:
             key = (m["vendorId"], m["model"])
             if key not in merged:
+                seeded_by[key] = batch_idx
                 merged[key] = {
                     "vendorId": m["vendorId"],
                     "model": m["model"],
@@ -1044,23 +1054,42 @@ def merge_models(
                 ):
                     new_v["checkedAt"] = old_v.get("checkedAt", today)
                 merged[key]["values"][vid_str] = new_v
+                value_batch[vid_str] = batch_idx
 
-    # Preserve any hand-curated models or unmanaged values from existing_models.
+    # Preserve hand-curated (unmanaged) values and values of vendors that failed this run.
     for key, old_m in existing_by_key.items():
-        unmanaged_vals = [
-            v for v in old_m["values"] if v["source"] not in MANAGED_SOURCES
+        kept_vals = [
+            v
+            for v in old_m["values"]
+            if v["source"] not in MANAGED_SOURCES or v["source"] in held_rank
         ]
-        if key not in merged and unmanaged_vals:
+        if not kept_vals:
+            continue
+        if key not in merged:
             merged[key] = {
                 "vendorId": old_m["vendorId"],
                 "model": old_m["model"],
                 "name": old_m["name"],
                 "efforts": list(old_m["efforts"]),
-                "values": {v["id"]: dict(v) for v in unmanaged_vals},
+                "values": {v["id"]: dict(v) for v in kept_vals},
             }
-        elif key in merged:
-            for v in unmanaged_vals:
-                merged[key]["values"].setdefault(v["id"], dict(v))
+            continue
+        cur = merged[key]
+        held_idx = [held_rank[v["source"]] for v in kept_vals if v["source"] in held_rank]
+        if held_idx:
+            # The failed vendor contributed efforts last run; keep them so tier
+            # entries keyed on those efforts stay valid until it recovers.
+            union = set(cur["efforts"]) | set(old_m["efforts"])
+            cur["efforts"] = [e for e in EFFORT_ORDER if e in union]
+            if min(held_idx) < seeded_by.get(key, len(collected_batches)):
+                cur["name"] = old_m["name"]
+        for v in kept_vals:
+            src_rank = held_rank.get(v["source"])
+            if src_rank is not None and src_rank < value_batch.get(v["id"], len(collected_batches)):
+                # Failed vendor outranks whoever supplied this id today: keep its last-good value.
+                cur["values"][v["id"]] = dict(v)
+            else:
+                cur["values"].setdefault(v["id"], dict(v))
 
     out: list[dict[str, Any]] = []
     for key in sorted(merged):
@@ -1078,69 +1107,100 @@ def merge_models(
     return out
 
 
-def main(argv: list[str] | None = None) -> None:
-    args = argv if argv is not None else sys.argv[1:]
-    touch = "--touch" in args
-    today = date.today().isoformat()
+def collect_claude(today: str) -> list[dict[str, Any]]:
+    return parse_claude_docs(
+        fetch_url(CLAUDE_OVERVIEW_MD_URL), fetch_url(CLAUDE_EFFORT_MD_URL), today
+    )
 
-    existing: dict[str, Any] = json.loads(FACTS_PATH.read_text(encoding="utf-8"))
 
-    claude_overview = fetch_url(CLAUDE_OVERVIEW_MD_URL)
-    claude_effort = fetch_url(CLAUDE_EFFORT_MD_URL)
-    claude_models = parse_claude_docs(claude_overview, claude_effort, today)
-    if not claude_models:
-        sys.exit("Claude docs parser returned 0 models; aborting")
-
+def collect_openai(today: str) -> list[dict[str, Any]]:
     oai_index = fetch_url(OPENAI_MODELS_URL)
-    chatgpt_html = fetch_url(CHATGPT_MODELS_URL)
-    codex_ctx = parse_chatgpt_codex_contexts(chatgpt_html)
+    codex_ctx = parse_chatgpt_codex_contexts(fetch_url(CHATGPT_MODELS_URL))
     oai_slugs = discover_openai_flagship_slugs(oai_index)
     if not oai_slugs:
-        sys.exit("OpenAI docs parser discovered 0 flagship models; aborting")
-    openai_models = [
+        raise ValueError("discovered 0 flagship models")
+    return [
         parse_openai_model_page(
             slug, fetch_url(f"{OPENAI_MODELS_URL}/{slug}"), codex_ctx, today
         )
         for slug in oai_slugs
     ]
 
-    google_pricing_md = fetch_url(GOOGLE_PRICING_MD_URL)
-    google_model_mds = {
+
+def collect_google(today: str) -> list[dict[str, Any]]:
+    pricing_md = fetch_url(GOOGLE_PRICING_MD_URL)
+    model_mds = {
         slug: fetch_url(f"{GOOGLE_MODELS_URL}/{slug}.md.txt")
         for slug in GOOGLE_TRACKED_SLUGS
     }
-    google_models = parse_google_docs(google_pricing_md, google_model_mds, today)
-    if not google_models:
-        sys.exit("Google Gemini docs parser returned 0 models; aborting")
+    return parse_google_docs(pricing_md, model_mds, today)
 
-    xai_md = fetch_url(XAI_MODELS_MD_URL)
-    xai_models = parse_xai_docs(xai_md, today)
-    if not xai_models:
-        sys.exit("xAI Grok docs parser returned 0 models; aborting")
 
-    zai_pricing_md = fetch_url(ZAI_PRICING_MD_URL)
-    zai_glm53_md = fetch_url(ZAI_GLM53_MD_URL)
-    zai_models = parse_zai_docs(zai_pricing_md, zai_glm53_md, today)
-    if not zai_models:
-        sys.exit("Z.ai GLM docs parser returned 0 models; aborting")
+def collect_xai(today: str) -> list[dict[str, Any]]:
+    return parse_xai_docs(fetch_url(XAI_MODELS_MD_URL), today)
 
-    oc_html = fetch_url(OPENCODE_GO_URL)
-    opencode_models = parse_opencode_go_docs(oc_html, today)
-    if not opencode_models:
-        sys.exit("OpenCode Go docs parser returned 0 models; aborting")
+
+def collect_zai(today: str) -> list[dict[str, Any]]:
+    return parse_zai_docs(fetch_url(ZAI_PRICING_MD_URL), fetch_url(ZAI_GLM53_MD_URL), today)
+
+
+def collect_opencode_go(today: str) -> list[dict[str, Any]]:
+    return parse_opencode_go_docs(fetch_url(OPENCODE_GO_URL), today)
+
+
+# (label, source URLs written into values, collector) in merge priority order.
+VENDOR_COLLECTORS: list[tuple[str, set[str], Callable[[str], list[dict[str, Any]]]]] = [
+    ("claude", {CLAUDE_OVERVIEW_URL, CLAUDE_EFFORT_URL}, collect_claude),
+    ("openai", {OPENAI_MODELS_URL, CHATGPT_MODELS_URL}, collect_openai),
+    ("google", {GOOGLE_MODELS_URL, GOOGLE_PRICING_URL}, collect_google),
+    ("xai", {XAI_MODELS_URL}, collect_xai),
+    ("zai", {ZAI_PRICING_URL, ZAI_GLM53_URL}, collect_zai),
+    ("opencode-go", {OPENCODE_GO_URL}, collect_opencode_go),
+]
+
+
+def collect_all(
+    today: str,
+    collectors: list[tuple[str, set[str], Callable[[str], list[dict[str, Any]]]]] = VENDOR_COLLECTORS,
+) -> tuple[list[list[dict[str, Any]]], dict[int, set[str]], dict[str, str]]:
+    """Run every vendor collector in isolation. Returns (batches, held, status)."""
+    batches: list[list[dict[str, Any]]] = []
+    held: dict[int, set[str]] = {}
+    status: dict[str, str] = {}
+    for idx, (label, sources, collect) in enumerate(collectors):
+        try:
+            models = collect(today)
+            if not models:
+                raise ValueError("parser returned 0 models (page layout may have changed)")
+            batches.append(models)
+            status[label] = "ok"
+        except Exception as exc:  # noqa: BLE001 - isolate one vendor from the rest
+            msg = describe_error(exc)
+            print(
+                f"WARN: {label} collection failed ({msg}); keeping previous {label} values",
+                file=sys.stderr,
+            )
+            batches.append([])
+            held[idx] = set(sources)
+            status[label] = f"error: {msg}"
+    return batches, held, status
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = argv if argv is not None else sys.argv[1:]
+    touch = "--touch" in args
+    status_out = option_value(args, "--status-out")
+    today = date.today().isoformat()
+
+    existing: dict[str, Any] = json.loads(FACTS_PATH.read_text(encoding="utf-8"))
+
+    batches, held, status = collect_all(today)
+    write_status(status_out, "facts", status)
+    if len(held) == len(VENDOR_COLLECTORS):
+        sys.exit("every vendor source failed; model-facts.json left untouched")
 
     merged_models = merge_models(
-        existing["models"],
-        [
-            claude_models,
-            openai_models,
-            google_models,
-            xai_models,
-            zai_models,
-            opencode_models,
-        ],
-        today=today,
-        touch=touch,
+        existing["models"], batches, today=today, touch=touch, held=held
     )
 
     changed = touch or merged_models != existing["models"]
@@ -1153,13 +1213,11 @@ def main(argv: list[str] | None = None) -> None:
     FACTS_PATH.write_text(
         json.dumps(bundle, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
     )
-    print(
-        f"model-facts.json: {len(merged_models)} models "
-        f"(claude={len(claude_models)}, openai={len(openai_models)}, "
-        f"google={len(google_models)}, xai={len(xai_models)}, "
-        f"zai={len(zai_models)}, opencode-go={len(opencode_models)}, "
-        f"changed={changed})"
+    counts = ", ".join(
+        f"{label}={'FAILED' if idx in held else len(batches[idx])}"
+        for idx, (label, _, _) in enumerate(VENDOR_COLLECTORS)
     )
+    print(f"model-facts.json: {len(merged_models)} models ({counts}, changed={changed})")
 
 
 if __name__ == "__main__":

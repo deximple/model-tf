@@ -1,9 +1,9 @@
 # Sources
 
 Collectors that keep `model-facts.json` and `model-tiers.json` current. The
-scheduled workflow (`.github/workflows/refresh.yml`) runs them weekly,
-validates the output, and commits directly to `main` when safe (or opens a PR
-when a single-source tier flip requires human review).
+scheduled workflow (`.github/workflows/refresh.yml`) runs them daily,
+validates the output, and commits directly to `main`. Only single-source tier
+flips are held back for a review PR; everything else still lands on `main`.
 
 ## Automated Collectors
 
@@ -12,6 +12,8 @@ when a single-source tier flip requires human review).
 | `fetch_vendor_facts.py` | `model-facts.json` | Official docs: Anthropic (`platform.claude.com`), OpenAI/Codex (`developers.openai.com`, `learn.chatgpt.com`), Google Gemini (`ai.google.dev`), xAI Grok (`docs.x.ai`), Z.ai GLM (`docs.z.ai`), OpenCode Go (`opencode.ai/docs/go/`) |
 | `fetch_artificial_analysis.py` | `model-tiers.json` | 4 benchmark leaderboards: Artificial Analysis (`artificialanalysis.ai`), Terminal-Bench (`tbench.ai`), Vals AI (`vals.ai`), Scale AI SEAL (`scale.com/leaderboard`) |
 | `check_staleness.py` | Summary + auto-merge gate + staleness report | compares against `HEAD` (`--diff-head`), evaluates single- vs multi-source tier shifts (`--gate-out`), and scans `checkedAt` fields |
+| `hold_tier_shifts.py` | Split apply | keeps the previous tier for gated entries so the rest of the refresh can be committed to `main` while the flip waits in a PR |
+| `refresh_common.py` | Shared helpers | `fetch_url` with retry/backoff, `--status-out` per-source health report |
 
 ### `fetch_vendor_facts.py`
 
@@ -24,6 +26,10 @@ when a single-source tier flip requires human review).
   managed vendor documentation URLs.
 - Preserves existing `checkedAt` and bundle `date` when values have not changed
   (pass `--touch` to force-bump).
+- Each vendor is collected in isolation. If one vendor fails (fetch error, or
+  its parser returns zero models), its previous values are kept unchanged and
+  the others still refresh. The run aborts without writing only when every
+  vendor fails.
 
 ### `fetch_artificial_analysis.py`
 
@@ -36,11 +42,19 @@ when a single-source tier flip requires human review).
   `reasoning`.
 - Matches models via `NAME_MAP` first, then automatic normalized name/id lookup
   against `model-facts.json`.
+- A secondary leaderboard that fails (or parses to zero rows) has its previous
+  evidence carried forward, so entries are never deleted because of an outage.
+  If Artificial Analysis itself fails, existing entries are kept and only
+  re-synced to `model-facts.json`.
+
+Both collectors accept `--status-out PATH` and write
+`{"collector", "sources": {name: "ok" | "error: ..."}, "failed_urls"}`. Carried-forward `failed_urls` do not count toward the two-source tier gate. The workflow
+turns any non-`ok` source into a `refresh-alert` issue.
 
 Run locally:
 
 ```sh
-python3 sources/fetch_vendor_facts.py                  # updates model-facts.json on change
+python3 sources/fetch_vendor_facts.py --status-out /tmp/facts-status.json   # updates model-facts.json on change
 python3 sources/fetch_artificial_analysis.py           # updates model-tiers.json on change
 python3 sources/check_staleness.py --diff-head         # prints diff summary + stale items
 ```
