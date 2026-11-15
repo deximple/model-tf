@@ -9,6 +9,7 @@
   ``.github/workflows/refresh.yml`` to open or close the refresh alert issue.
 """
 
+import http.client
 import json
 import time
 import urllib.error
@@ -25,8 +26,9 @@ RETRYABLE_HTTP = {408, 425, 429, 500, 502, 503, 504}
 def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, urllib.error.HTTPError):
         return exc.code in RETRYABLE_HTTP
-    # URLError (DNS, connection reset, TLS), socket timeouts, truncated reads.
-    return isinstance(exc, (urllib.error.URLError, TimeoutError, ConnectionError, OSError))
+    # URLError (DNS, connection reset, TLS), socket timeouts, truncated or
+    # malformed responses (http.client.IncompleteRead, RemoteDisconnected).
+    return isinstance(exc, (OSError, http.client.HTTPException))
 
 
 def fetch_url(

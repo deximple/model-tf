@@ -3,7 +3,9 @@
 
 import copy
 import json
+import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -554,6 +556,139 @@ class HoldTierShiftTests(unittest.TestCase):
         rerun = self._tiers("frontier", "AA 46", "2026-11-16", "2026-11-16")
         held = hold_tier_shifts.hold_shifts(main, rerun, [["claude/claude-opus-5-5", "max"]])
         self.assertEqual(held, main)
+
+
+
+FAKE_GH = """#!{python}
+# Minimal stand-in for the GitHub CLI: logs every call, answers the queries
+# refresh_alert.sh makes with canned values from the environment.
+import json, os, sys
+args = sys.argv[1:]
+with open(os.environ["FAKE_GH_LOG"], "a", encoding="utf-8") as fh:
+    fh.write(json.dumps(args) + "\\n")
+if args[:2] == ["issue", "list"]:
+    print(os.environ.get("FAKE_GH_OPEN_ISSUE", ""))
+elif args[:2] == ["issue", "view"]:
+    print(os.environ.get("FAKE_GH_LAST_MARKED_BODY", ""))
+"""
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("jq"), "needs bash and jq")
+class RefreshAlertScriptTests(unittest.TestCase):
+    SCRIPT = ROOT / "scripts" / "refresh_alert.sh"
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp)
+        bindir = self.tmp / "bin"
+        bindir.mkdir()
+        gh = bindir / "gh"
+        gh.write_text(FAKE_GH.format(python=sys.executable), encoding="utf-8")
+        gh.chmod(0o755)
+        self.bindir = bindir
+        self.status_dir = self.tmp / "status"
+        self.status_dir.mkdir()
+
+    def _status(self, collector: str, sources: dict) -> None:
+        refresh_common.write_status(
+            str(self.status_dir / f"status-{collector}.json"), collector, sources
+        )
+
+    def _run(self, **env_overrides: str) -> tuple[list[list[str]], str, str]:
+        log = self.tmp / "gh.log"
+        summary = self.tmp / "summary.md"
+        log.write_text("", encoding="utf-8")
+        summary.write_text("", encoding="utf-8")
+        env = dict(os.environ)
+        env.update(
+            {
+                "PATH": f"{self.bindir}{os.pathsep}{env.get('PATH', '')}",
+                "FAKE_GH_LOG": str(log),
+                "STATUS_DIR": str(self.status_dir),
+                "GITHUB_STEP_SUMMARY": str(summary),
+                "RUN_URL": "https://github.com/o/r/actions/runs/1",
+                "JOB_STATUS": "success",
+                "PR_OUTCOME": "skipped",
+            }
+        )
+        env.update(env_overrides)
+        proc = subprocess.run(
+            ["bash", str(self.SCRIPT)], env=env, capture_output=True, text=True
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines() if line]
+        return calls, proc.stdout, summary.read_text(encoding="utf-8")
+
+    @staticmethod
+    def _verbs(calls: list[list[str]]) -> list[str]:
+        return [" ".join(c[:2]) for c in calls]
+
+    def _healthy(self) -> None:
+        self._status("facts", {"claude": "ok", "openai": "ok"})
+        self._status("tiers", {"artificialanalysis": "ok", "scale": "ok"})
+
+    def _degraded(self) -> None:
+        self._status("facts", {"claude": "ok", "openai": "error: HTTPError: 503 | busy"})
+        self._status("tiers", {"artificialanalysis": "ok", "scale": "ok"})
+
+    def test_healthy_run_without_alert_does_nothing(self) -> None:
+        self._healthy()
+        calls, out, summary = self._run()
+        self.assertNotIn("issue create", self._verbs(calls))
+        self.assertNotIn("issue close", self._verbs(calls))
+        self.assertIn("All sources healthy", out)
+        self.assertIn("| facts | claude | ok |", summary)
+
+    def test_healthy_run_closes_open_alert(self) -> None:
+        self._healthy()
+        calls, _, _ = self._run(FAKE_GH_OPEN_ISSUE="7")
+        close = [c for c in calls if c[:2] == ["issue", "close"]]
+        self.assertEqual(len(close), 1)
+        self.assertEqual(close[0][2], "7")
+
+    def test_degraded_source_opens_labelled_alert(self) -> None:
+        self._degraded()
+        calls, out, summary = self._run()
+        create = [c for c in calls if c[:2] == ["issue", "create"]]
+        self.assertEqual(len(create), 1)
+        self.assertIn("refresh-alert", create[0])
+        body = Path(create[0][create[0].index("--body-file") + 1])
+        self.assertFalse(body.exists())  # temp dir cleaned up after the run
+        self.assertIn("::warning::`facts/openai`", out)
+        self.assertIn("| facts | openai | error: HTTPError: 503 / busy |", summary)
+
+    def test_same_problems_do_not_comment_again(self) -> None:
+        self._degraded()
+        # Same fingerprint recipe as refresh_alert.sh: failing labels only.
+        line = "- `facts/openai`"
+        fp = subprocess.run(
+            ["bash", "-c", f"printf '%s\\n' '{line}' | sort | sha256sum | cut -c1-16"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        calls, out, _ = self._run(
+            FAKE_GH_OPEN_ISSUE="7",
+            FAKE_GH_LAST_MARKED_BODY=f"<!-- refresh-alert-fp:{fp} -->",
+        )
+        self.assertNotIn("issue comment", self._verbs(calls))
+        self.assertIn("already describes these problems", out)
+
+    def test_changed_problems_comment_on_open_alert(self) -> None:
+        self._degraded()
+        calls, _, _ = self._run(
+            FAKE_GH_OPEN_ISSUE="7",
+            FAKE_GH_LAST_MARKED_BODY="<!-- refresh-alert-fp:0000000000000000 -->",
+        )
+        comment = [c for c in calls if c[:2] == ["issue", "comment"]]
+        self.assertEqual(len(comment), 1)
+        self.assertEqual(comment[0][2], "7")
+        self.assertNotIn("issue create", self._verbs(calls))
+
+    def test_failed_job_and_pr_failure_are_reported(self) -> None:
+        calls, out, summary = self._run(JOB_STATUS="failure", PR_OUTCOME="failure")
+        self.assertIn("issue create", self._verbs(calls))
+        self.assertIn("Refresh job status: **failure**", out)
+        self.assertIn("Workflow permissions", out)
+        self.assertIn("no status files", summary)
 
 
 if __name__ == "__main__":
