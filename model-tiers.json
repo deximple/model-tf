@@ -10,7 +10,7 @@
   {
    "key": "alibaba/qwen3.8-max",
    "effort": "default",
-   "tier": "low",
+   "tier": "mid",
    "rank": {
     "simpleCoding": 40,
     "reasoning": 59
