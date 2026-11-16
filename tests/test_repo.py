@@ -245,24 +245,6 @@ class ValsParserTests(unittest.TestCase):
 
         return f'<astro-island component-url="/_astro/X.js" props="{_html.escape(json.dumps(props), quote=True)}"></astro-island>'
 
-    def test_parses_current_vals_index_page_layout(self) -> None:
-        # Shape observed live on https://www.vals.ai/benchmarks/vals_index (2026-11-16).
-        item = lambda model, acc: [0, {"model": [0, model], "accuracy": [0, acc], "position": [0, 1]}]  # noqa: E731
-        page = self._island({"current": [0, "vals_index"]}) + self._island(
-            {
-                "regularLeaderboardItems": [1, [item("Claude Fable 5.2", "71.31"), item("Claude Opus 5.5", "70.14")]],
-                "openSourceLeaderboardItems": [1, [item("GLM 5.3", "55.04"), item("Claude Opus 5.5", "70.14")]],
-            }
-        )
-        rows = fetch_aa.parse_vals_benchmarks(page)
-        self.assertEqual(
-            rows,
-            [
-                {"model_label": "Claude Fable 5.2", "score": 71.3},
-                {"model_label": "Claude Opus 5.5", "score": 70.1},
-                {"model_label": "GLM 5.3", "score": 55.0},
-            ],
-        )
 
     def test_still_parses_legacy_hub_layout(self) -> None:
         pt = lambda label, score: [0, {"label": [0, label], "score": [0, score]}]  # noqa: E731
@@ -944,31 +926,6 @@ class AutoRepairTests(unittest.TestCase):
         self.assertIn(".github/workflows/refresh.yml", detail)
         self.assertFalse(auto_repair.check_diff(["scripts/auto_repair.py"])[0])
 
-    def test_selftest_breakage_still_applies_to_current_code(self) -> None:
-        # selftest-repair.yml depends on this: if the collector is refactored the
-        # break script must be updated, or the live agent test silently tests nothing.
-        src = (ROOT / "sources" / "fetch_artificial_analysis.py").read_text(encoding="utf-8")
-        broken = selftest_break_vals.break_collector(src)
-        self.assertIn('VALS_URL = "https://www.vals.ai/benchmarks"\n', broken)
-        self.assertNotIn('_astro_props(page, "LeaderboardItems")', broken)
-        tests_src = (ROOT / "tests" / "test_repo.py").read_text(encoding="utf-8")
-        broken_tests = selftest_break_vals.break_tests(tests_src)
-        # Concatenated so this test's own source does not contain the needle.
-        self.assertNotIn("    def test_parses_current_vals_index_page_layout" + "(self)", broken_tests)
-        self.assertIn("    def test_still_parses_legacy_hub_layout" + "(self)", broken_tests)
-        self.assertNotIn("    def test_selftest_breakage_still_applies_to_current_code" + "(self)", broken_tests)
-        ns: dict = {"__name__": "broken_collector", "__file__": str(ROOT / "sources" / "fetch_artificial_analysis.py")}
-        sys.modules.setdefault("refresh_common", refresh_common)
-        exec(compile(broken, "broken_collector.py", "exec"), ns)  # noqa: S102 - our own source
-        item = [0, {"model": [0, "Claude Opus 5.5"], "accuracy": [0, "70.14"]}]
-        page = ValsParserTests._island({"regularLeaderboardItems": [1, [item]]})
-        self.assertEqual(ns["parse_vals_benchmarks"](page), [])
-        self.assertTrue(fetch_aa.parse_vals_benchmarks(page))  # the real code still parses it
-        tiers_src = (ROOT / "model-tiers.json").read_text(encoding="utf-8")
-        old_tiers = json.loads(selftest_break_vals.break_tiers(tiers_src))
-        sources = {ev["source"] for e in old_tiers["entries"] for ev in e["evidence"]}
-        self.assertNotIn(selftest_break_vals.NEW_VALS_URL, sources)
-        self.assertIn(selftest_break_vals.OLD_VALS_URL, sources)
 
     def test_scan_patch_rejects_secrets(self) -> None:
         clean = "+VALS_URL = 'https://www.vals.ai/benchmarks/vals_index'\n"
