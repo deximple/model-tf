@@ -21,12 +21,6 @@
      "source": "https://www.tbench.ai/leaderboard",
      "checkedAt": "2026-11-16",
      "note": "Terminal-Bench accuracy 26.97% (Claude Code)"
-    },
-    {
-     "kind": "benchmark",
-     "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-16",
-     "note": "Vals AI Index 59%"
     }
    ]
   },
