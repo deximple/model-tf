@@ -2141,6 +2141,38 @@
   },
   {
    "vendorId": "tencent",
+   "model": "hy4-flash-free",
+   "name": "Hy4 flash Free",
+   "efforts": [],
+   "values": [
+    {
+     "id": "tencent/hy4-flash-free/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
+    },
+    {
+     "id": "tencent/hy4-flash-free/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
+    },
+    {
+     "id": "tencent/hy4-flash-free/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
+    }
+   ]
+  },
+  {
+   "vendorId": "tencent",
    "model": "hy4-preview",
    "name": "Hy4 Preview",
    "efforts": [],

@@ -311,8 +311,8 @@
     {
      "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-09",
-     "note": "Scale SEAL: HLE Diamond 55, MCP Atlas 85.4, SWE Atlas 77.4"
+     "checkedAt": "2026-11-16",
+     "note": "Scale SEAL: HLE Diamond 55, MCP Atlas 85.4"
     }
    ]
   },
@@ -689,8 +689,8 @@
     {
      "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-15",
-     "note": "Scale SEAL: Humanity's Sixth Sense 55.4, HLE Diamond 53.2, MCP Atlas 90.7, SWE Atlas 70.1, MultiChallenge 78.7"
+     "checkedAt": "2026-11-16",
+     "note": "Scale SEAL: Humanity's Sixth Sense 55.4, HLE Diamond 53.2, MCP Atlas 90.7"
     }
    ]
   },
@@ -919,8 +919,8 @@
     {
      "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-09",
-     "note": "Scale SEAL: Humanity's Sixth Sense 53.6, HLE Diamond 60.6, SWE Atlas 69.4"
+     "checkedAt": "2026-11-16",
+     "note": "Scale SEAL: Humanity's Sixth Sense 53.6, HLE Diamond 60.6"
     }
    ]
   },
@@ -1148,8 +1148,8 @@
     {
      "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-12",
-     "note": "Scale SEAL: Humanity's Sixth Sense 46.6, MultiChallenge 82"
+     "checkedAt": "2026-11-16",
+     "note": "Scale SEAL: Humanity's Sixth Sense 46.6"
     }
    ]
   },
@@ -1247,12 +1247,6 @@
      "source": "https://www.vals.ai/benchmarks/vals_index",
      "checkedAt": "2026-11-16",
      "note": "Vals AI Index 60.5%"
-    },
-    {
-     "kind": "benchmark",
-     "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-09",
-     "note": "Scale SEAL: MultiChallenge 74.2"
     }
    ]
   },
