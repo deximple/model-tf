@@ -340,8 +340,8 @@ jobs:
           git -C "$wt" push origin "HEAD:${BASE_BRANCH}"
           git worktree remove --force "$wt"
 
-  # Claude Code proposes a fix as a review PR (see auto-repair.yml). Never in
-  # self-test sandboxes, whose failures are simulated.
+  # A coding agent (Copilot CLI by default) proposes a fix as a review PR (see
+  # auto-repair.yml). Never in self-test sandboxes, whose failures are simulated.
   repair:
     needs: refresh
     if: always() && !inputs.sandbox_branch && needs.refresh.outputs.repair_targets != '' && needs.refresh.outputs.repair_targets != '[]'
@@ -351,6 +351,7 @@ jobs:
       pull-requests: write
       issues: write
       actions: write
+      copilot-requests: write # the default repair agent, Copilot CLI
     with:
       targets: ${{ needs.refresh.outputs.repair_targets }}
       base_branch: main

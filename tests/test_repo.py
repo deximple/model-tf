@@ -979,6 +979,32 @@ class AutoRepairTests(unittest.TestCase):
         self.assertTrue(auto_repair.scan_patch("+t = 'ghs_" + "a" * 30 + "'\n", []))
         self.assertEqual(auto_repair.scan_patch(clean, ["", "short"]), [])
 
+    def test_parse_result_takes_last_well_formed_marker(self) -> None:
+        prompt = auto_repair.render_prompt([{"collector": "tiers", "source": "vals", "error": "x"}])
+        self.assertIn(auto_repair.RESULT_MARKER, prompt.splitlines()[-1])
+        # The template line in the prompt must not count as a result.
+        self.assertEqual(auto_repair.parse_result(prompt), {})
+        log = "\n".join([
+            prompt,
+            'AUTO_REPAIR_RESULT {"fixed": false, "root_cause": "draft", "changes": ""}',
+            "● Done. AUTO_REPAIR_RESULT: `{\"fixed\": true, \"root_cause\": \"moved\", \"changes\": \"url\", \"x\": 1}`",
+            "AUTO_REPAIR_RESULT {not json}",
+            'AUTO_REPAIR_RESULT {"fixed": "yes"}',
+        ])
+        self.assertEqual(auto_repair.parse_result(log), {"fixed": True, "root_cause": "moved", "changes": "url"})
+        self.assertEqual(auto_repair.parse_result("no marker here"), {})
+
+    def test_copilot_engine_is_wired_without_secrets(self) -> None:
+        # The default engine must work with the job token alone (no paid secret).
+        wf = (ROOT / ".github" / "workflows" / "auto-repair.yml").read_text(encoding="utf-8")
+        self.assertIn("copilot-requests: write", wf)
+        self.assertIn("COPILOT_GITHUB_TOKEN: ${{ github.token }}", wf)
+        self.assertIn("persist-credentials: false", wf)
+        self.assertIn("--deny-tool 'shell(git push)'", wf)
+        for caller in ("refresh.yml", "selftest-repair.yml"):
+            text = (ROOT / ".github" / "workflows" / caller).read_text(encoding="utf-8")
+            self.assertIn("copilot-requests: write", text, caller)
+
 
 if __name__ == "__main__":
     unittest.main()

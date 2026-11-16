@@ -1,9 +1,9 @@
 name: auto-repair
 
 # When a collector fails in a way code can fix (page layout changed or page
-# moved), Claude Code proposes a fix and a human reviews it as a PR.
+# moved), a coding agent proposes a fix and a human reviews it as a PR.
 #
-#   propose  read-only token, no git credentials. Claude edits sources/ and
+#   propose  read-only token, no git credentials. The agent edits sources/ and
 #            tests/; deterministic checks (path allowlist, unit tests,
 #            validate.py, the failing source reports "ok" again, secret scan)
 #            decide whether the change is kept. Output: a patch artifact.
@@ -12,8 +12,13 @@ name: auto-repair
 #   report   comments the outcome on the refresh-alert issue (one attempt per
 #            distinct failure).
 #
-# Requires a repository secret ANTHROPIC_API_KEY (Claude Console) or
-# CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`); without one it skips.
+# Agent engine (repository variable AUTO_REPAIR_ENGINE, or the `engine` input):
+#   copilot  default. GitHub Copilot CLI on the job's own GITHUB_TOKEN with
+#            `copilot-requests: write`: covered by the GitHub Copilot plan, no
+#            API key or secret. Optional variable AUTO_REPAIR_COPILOT_MODEL
+#            pins a model; otherwise Copilot picks one available in the plan.
+#   claude   Claude Code; needs an ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN
+#            secret, otherwise the run is skipped.
 
 on:
   workflow_call:
@@ -33,6 +38,10 @@ on:
         description: "Retry even if this failure was already attempted or a PR is open"
         type: boolean
         default: false
+      engine:
+        description: "copilot | claude; empty = repository variable AUTO_REPAIR_ENGINE, else copilot"
+        type: string
+        default: ""
     secrets:
       ANTHROPIC_API_KEY:
         required: false
@@ -40,7 +49,7 @@ on:
         required: false
     outputs:
       status:
-        description: "skipped-no-credentials | not-reproduced | already-proposed | already-attempted | fixed | no-fix | rejected-scope | tests-failed | still-failing | rejected-secret"
+        description: "skipped-no-credentials | not-reproduced | already-proposed | already-attempted | fixed | no-fix | agent-failed | rejected-scope | tests-failed | still-failing | rejected-secret"
         value: ${{ jobs.propose.outputs.status }}
       pr_url:
         value: ${{ jobs.publish.outputs.pr_url }}
@@ -57,6 +66,10 @@ on:
         type: boolean
         required: false
         default: false
+      engine:
+        type: choice
+        options: [default, copilot, claude]
+        default: default
 
 permissions:
   contents: read
@@ -73,6 +86,7 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
+      copilot-requests: write # Copilot CLI on the job token; the plan covers it
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -80,11 +94,13 @@ jobs:
       ALERT_ISSUE: ${{ inputs.alert_issue || '' }}
       FORCE: ${{ inputs.force && 'true' || 'false' }}
       REQUESTED: ${{ inputs.targets || '' }}
+      COPILOT_CLI_VERSION: "1.0.112"
     outputs:
       status: ${{ steps.check.outputs.status || steps.decide.outputs.status }}
       branch: ${{ steps.reproduce.outputs.branch }}
       slug: ${{ steps.reproduce.outputs.slug }}
       fingerprint: ${{ steps.reproduce.outputs.fingerprint }}
+      engine: ${{ steps.engine.outputs.name }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -99,17 +115,23 @@ jobs:
       - name: Install validator dependency
         run: pip install jsonschema
 
-      - name: Check for a Claude credential
-        id: creds
+      - name: Choose the agent engine
+        id: engine
         env:
-          HAS_CREDENTIAL: ${{ secrets.ANTHROPIC_API_KEY != '' || secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+          ENGINE: ${{ (inputs.engine != 'default' && inputs.engine) || vars.AUTO_REPAIR_ENGINE || 'copilot' }}
+          HAS_CLAUDE: ${{ secrets.ANTHROPIC_API_KEY != '' || secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
         run: |
-          if [ "$HAS_CREDENTIAL" = "true" ]; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::auto-repair skipped: add an ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN repository secret to enable it"
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          fi
+          case "$ENGINE" in
+            copilot) ok=true ;;
+            claude)
+              ok="$HAS_CLAUDE"
+              if [ "$ok" != "true" ]; then
+                echo "::notice::auto-repair skipped: engine claude needs an ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN secret (or use the default engine, copilot)"
+              fi ;;
+            *) echo "::error::unknown auto-repair engine '$ENGINE' (copilot | claude)"; exit 1 ;;
+          esac
+          echo "Engine: $ENGINE"
+          { echo "name=$ENGINE"; echo "ok=$ok"; } >> "$GITHUB_OUTPUT"
 
       - name: Reproduce on a fresh run
         id: reproduce
@@ -132,7 +154,7 @@ jobs:
       - name: Decide whether to run the agent
         id: decide
         env:
-          CREDS: ${{ steps.creds.outputs.ok }}
+          CREDS: ${{ steps.engine.outputs.ok }}
           TARGETS: ${{ steps.reproduce.outputs.targets }}
           BRANCH: ${{ steps.reproduce.outputs.branch }}
           FP: ${{ steps.reproduce.outputs.fingerprint }}
@@ -167,9 +189,52 @@ jobs:
             echo "${delim}"
           } >> "$GITHUB_OUTPUT"
 
+      - uses: actions/setup-node@v4
+        if: steps.decide.outputs.status == 'run' && steps.engine.outputs.name == 'copilot'
+        with:
+          node-version: "22"
+
+      - name: Copilot CLI proposes a fix
+        id: copilot
+        if: steps.decide.outputs.status == 'run' && steps.engine.outputs.name == 'copilot'
+        continue-on-error: true # judged by the deterministic checks below
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ""
+          PROMPT: ${{ steps.prompt.outputs.text }}
+          COPILOT_MODEL: ${{ vars.AUTO_REPAIR_COPILOT_MODEL || '' }}
+        run: |
+          npm install -g --no-fund --no-audit "@github/copilot@${COPILOT_CLI_VERSION}"
+          copilot --version
+          # Commands the agent runs get no token in their environment.
+          shim="$RUNNER_TEMP/agent-bin"
+          mkdir -p "$shim"
+          for py in python3 python; do
+            real=$(command -v "$py")
+            # "$@" belongs to the shim, not to this script.
+            # shellcheck disable=SC2016
+            printf '#!/bin/sh\nexec env -u COPILOT_GITHUB_TOKEN -u GH_TOKEN -u GITHUB_TOKEN %s "$@"\n' "$real" > "$shim/$py"
+            chmod +x "$shim/$py"
+          done
+          export PATH="$shim:$PATH"
+          python3 -c 'import os, sys; sys.exit("COPILOT_GITHUB_TOKEN" in os.environ)'
+          model_args=()
+          if [ -n "$COPILOT_MODEL" ]; then model_args=(--model "$COPILOT_MODEL"); fi
+          log="$RUNNER_TEMP/agent.log"
+          # Non-interactive: anything not allowed here is denied, not asked.
+          set +e
+          timeout 35m copilot -p "$PROMPT" "${model_args[@]}" --no-ask-user --allow-all-urls \
+            --allow-tool 'write' --allow-tool 'shell(python3)' --allow-tool 'shell(python)' \
+            --deny-tool 'shell(git push)' --deny-tool 'shell(gh:*)' 2>&1 | tee "$log"
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "result=$(python3 scripts/auto_repair.py parse-result "$log")" >> "$GITHUB_OUTPUT"
+          echo "Copilot CLI exit code: $rc"
+          exit "$rc"
+
       - name: Claude Code proposes a fix
         id: claude
-        if: steps.decide.outputs.status == 'run'
+        if: steps.decide.outputs.status == 'run' && steps.engine.outputs.name == 'claude'
         continue-on-error: true # judged by the deterministic checks below
         uses: anthropics/claude-code-action@v1
         env:
@@ -192,8 +257,9 @@ jobs:
         if: steps.decide.outputs.status == 'run'
         env:
           TARGETS: ${{ steps.reproduce.outputs.targets }}
-          CLAUDE_CONCLUSION: ${{ steps.claude.outputs.conclusion || steps.claude.outcome }}
-          CLAUDE_RESULT: ${{ steps.claude.outputs.structured_output }}
+          ENGINE_LABEL: ${{ steps.engine.outputs.name == 'claude' && 'Claude Code' || 'GitHub Copilot CLI' }}
+          AGENT_OUTCOME: ${{ steps.engine.outputs.name == 'claude' && steps.claude.outcome || steps.copilot.outcome }}
+          AGENT_RESULT: ${{ steps.engine.outputs.name == 'claude' && steps.claude.outputs.structured_output || steps.copilot.outputs.result }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
@@ -212,7 +278,11 @@ jobs:
 
           if ! scope=$(python3 scripts/auto_repair.py check-diff); then
             case "$scope" in
-              "no code change proposed") verdict no-fix "Claude made no code change (agent: $CLAUDE_CONCLUSION)." ;;
+              "no code change proposed")
+                if [ "$AGENT_OUTCOME" = "success" ]; then
+                  verdict no-fix "$ENGINE_LABEL made no code change."
+                fi
+                verdict agent-failed "$ENGINE_LABEL did not complete (step outcome: $AGENT_OUTCOME); see its log." ;;
               *) verdict rejected-scope "$scope" ;;
             esac
           fi
@@ -240,7 +310,7 @@ jobs:
           fi
 
           {
-            echo "Automated repair proposed by **Claude Code** after the refresh found a collector failing in a way that points to a code problem."
+            echo "Automated repair proposed by **${ENGINE_LABEL}** after the refresh found a collector failing in a way that points to a code problem."
             echo
             echo "## Failing sources"
             python3 scripts/auto_repair.py markdown --targets "$TARGETS"
@@ -248,7 +318,7 @@ jobs:
             echo "## Agent summary (unverified)"
             python3 - <<'PY'
           import json, os
-          raw = os.environ.get("CLAUDE_RESULT") or "{}"
+          raw = os.environ.get("AGENT_RESULT") or "{}"
           try:
               r = json.loads(raw)
           except ValueError:
@@ -367,7 +437,8 @@ jobs:
           [ "$PROPOSE_RESULT" = "success" ] || status="${status} (propose job: ${PROPOSE_RESULT})"
           case "$status" in
             fixed) msg="Auto-repair proposed a verified fix: ${PR_URL:-PR creation failed, see run}" ;;
-            no-fix) msg="Auto-repair ran; Claude made no code change (likely not fixable in code)." ;;
+            no-fix) msg="Auto-repair ran; the agent made no code change (likely not fixable in code)." ;;
+            agent-failed) msg="Auto-repair: the agent did not complete (for example Copilot quota or an outage); it retries on the next refresh." ;;
             rejected-scope|tests-failed|still-failing|rejected-secret) msg="Auto-repair ran; the proposed change was rejected by the checks: ${status}." ;;
             *) msg="Auto-repair: ${status}." ;;
           esac
@@ -376,6 +447,9 @@ jobs:
           case "$STATUS" in
             ""|skipped-no-credentials|not-reproduced|already-proposed|already-attempted) exit 0 ;;
           esac
+          # The marker records "attempted"; a transient agent failure is retried.
+          marker="<!-- auto-repair-fp:${FP} -->"
+          if [ "$STATUS" = "agent-failed" ]; then marker=""; fi
           if [ -n "$ALERT_ISSUE" ]; then
-            gh issue comment "$ALERT_ISSUE" --body "$(printf '%s\n\nRun: %s\n\n<!-- auto-repair-fp:%s -->\n' "$msg" "$RUN_URL" "$FP")"
+            gh issue comment "$ALERT_ISSUE" --body "$(printf '%s\n\nRun: %s\n\n%s\n' "$msg" "$RUN_URL" "$marker")"
           fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic helpers around the Claude Code auto-repair job.
+"""Deterministic helpers around the auto-repair job (Copilot CLI or Claude Code).
 
 The agent only proposes a code change. Everything that decides whether that
 change is acceptable lives here, so it is testable and never depends on what
@@ -14,6 +14,9 @@ the agent says about its own work.
               the allowed paths (data files are ignored: collectors rewrite them)
   verify      fail unless every target source reports "ok" in fresh status files
   scan-patch  fail if a patch contains secret values or private-key material
+  parse-result
+              print the agent's final AUTO_REPAIR_RESULT JSON from its log ("{}"
+              if absent); only quoted in the PR body, never trusted
 
 Usage: python3 scripts/auto_repair.py <command> [options]
 """
@@ -34,6 +37,10 @@ ROOT = Path(__file__).resolve().parent.parent
 ALLOWED_PREFIXES = ("sources/", "tests/")
 # Rewritten by the collectors while the agent tests; restored, never proposed.
 DATA_FILES = ("model-facts.json", "model-tiers.json")
+# The agent ends its final message with this marker and a JSON object.
+RESULT_MARKER = "AUTO_REPAIR_RESULT"
+# Tokens present in the propose job; a patch containing any of them is refused.
+SECRET_ENV = ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "GITHUB_TOKEN", "COPILOT_GITHUB_TOKEN")
 
 # Failures no code change can fix: outages, throttling, TLS, simulated outages.
 NOT_REPAIRABLE = (
@@ -140,7 +147,8 @@ Rules:
 - If the failure cannot be fixed in code (site down, access blocked, data withdrawn), change nothing
   and explain why.
 
-Finish with the structured result: whether you fixed it, the root cause, and what you changed.
+When you are done, end your final message with exactly one line of this form (single-line JSON):
+{RESULT_MARKER} {{"fixed": true|false, "root_cause": "<one sentence>", "changes": "<what you changed>"}}
 """
 
 
@@ -182,6 +190,28 @@ def scan_patch(patch: str, secrets: list[str]) -> list[str]:
     return problems
 
 
+def parse_result(log: str) -> dict[str, Any]:
+    """The last well-formed `AUTO_REPAIR_RESULT {...}` line of an agent log.
+
+    Only lines that parse as a JSON object with a boolean "fixed" count (the
+    template line in the prompt does not), and the last one wins.
+    """
+    found: dict[str, Any] = {}
+    decoder = json.JSONDecoder()
+    for line in log.splitlines():
+        idx = line.find(RESULT_MARKER)
+        if idx < 0:
+            continue
+        rest = line[idx + len(RESULT_MARKER):].lstrip(" :`")
+        try:
+            obj, _ = decoder.raw_decode(rest)
+        except ValueError:
+            continue
+        if isinstance(obj, dict) and isinstance(obj.get("fixed"), bool):
+            found = {k: obj[k] for k in ("fixed", "root_cause", "changes") if k in obj}
+    return found
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -202,6 +232,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--status-dir", required=True)
     p = sub.add_parser("scan-patch")
     p.add_argument("patch")
+    p = sub.add_parser("parse-result")
+    p.add_argument("log")
     ns = parser.parse_args(argv)
 
     if ns.cmd == "targets":
@@ -246,11 +278,16 @@ def main(argv: list[str] | None = None) -> int:
                 bad.append(ident)
         return 1 if bad else 0
     if ns.cmd == "scan-patch":
-        secrets = [os.environ.get(k, "") for k in ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "GITHUB_TOKEN")]
+        secrets = [os.environ.get(k, "") for k in SECRET_ENV]
         problems = scan_patch(Path(ns.patch).read_text(encoding="utf-8", errors="replace"), secrets)
         for prob in problems:
             print(prob)
         return 1 if problems else 0
+    if ns.cmd == "parse-result":
+        path = Path(ns.log)
+        log = path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
+        print(json.dumps(parse_result(log)))
+        return 0
     return 2
 
 

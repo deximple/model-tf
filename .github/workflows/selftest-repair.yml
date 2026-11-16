@@ -1,14 +1,14 @@
 name: selftest-repair
 
-# End-to-end check of auto-repair.yml with the real Claude Code agent. A
+# End-to-end check of auto-repair.yml with the real agent. A
 # throwaway selftest/repair-base branch gets the Vals collector exactly as it
 # was before the 2026-11-16 fix (old URL, old page layout), so the live site
 # makes it fail for real. auto-repair must then deliver a verified review PR,
 # report on an alert issue, and deduplicate a second run. main is never
 # touched; everything is cleaned up at the end.
 #
-# Costs one agent run (Claude Opus 5.5) per execution. Needs the
-# ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN repository secret.
+# Costs one agent run per execution: with the default engine (Copilot CLI)
+# that is Copilot usage on the GitHub plan; no secret is needed.
 
 on:
   workflow_dispatch:
@@ -26,6 +26,7 @@ permissions:
   pull-requests: write
   issues: write
   actions: write
+  copilot-requests: write
 
 concurrency:
   group: selftest-repair
