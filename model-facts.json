@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-10",
+ "date": "2026-11-16",
  "models": [
   {
    "vendorId": "alibaba",
@@ -167,6 +167,62 @@
      "text": null,
      "source": "https://opencode.ai/docs/go/",
      "checkedAt": "2026-11-02"
+    }
+   ]
+  },
+  {
+   "vendorId": "alibaba",
+   "model": "qwen4-max",
+   "name": "Qwen4 Max",
+   "efforts": [],
+   "values": [
+    {
+     "id": "alibaba/qwen4-max/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.075,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
+    },
+    {
+     "id": "alibaba/qwen4-max/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 1.5,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
+    },
+    {
+     "id": "alibaba/qwen4-max/monthlyLimitUSD/go",
+     "code": "monthlyLimitUSD",
+     "number": 15,
+     "text": "go",
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
+    },
+    {
+     "id": "alibaba/qwen4-max/monthlyLimitUSD/go-plus",
+     "code": "monthlyLimitUSD",
+     "number": 60,
+     "text": "go-plus",
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
+    },
+    {
+     "id": "alibaba/qwen4-max/monthlyLimitUSD/go-teams",
+     "code": "monthlyLimitUSD",
+     "number": 20,
+     "text": "go-teams",
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
+    },
+    {
+     "id": "alibaba/qwen4-max/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 4.5,
+     "text": null,
+     "source": "https://opencode.ai/docs/go/",
+     "checkedAt": "2026-11-16"
     }
    ]
   },
