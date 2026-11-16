@@ -1,0 +1,29 @@
+name: diag-copilot
+
+# TEMPORARY: does GITHUB_TOKEN with `copilot-requests: write` let Copilot CLI
+# run in Actions without a PAT? Removed before merge.
+on:
+  push:
+    branches: [claude/beautiful-bell-fewls0]
+    paths: [".github/workflows/diag-copilot.yml"]
+
+permissions:
+  contents: read
+  copilot-requests: write
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot && copilot --version
+      - name: One prompt with the job token
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          timeout 180 copilot -p "Reply with the single word ping." -s --no-ask-user 2>&1 | tail -n 20 || echo "exit=$?"
