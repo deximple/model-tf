@@ -301,14 +301,22 @@ class SelfTestHelperTests(unittest.TestCase):
         tiers, _ = validate.load_json(validate.TIERS_PATH)
         facts, raw = validate.load_json(validate.FACTS_PATH)
         a, b = copy.deepcopy(tiers), copy.deepcopy(tiers)
-        r1 = selftest_inject_tier_flip.inject(a)
-        r2 = selftest_inject_tier_flip.inject(b)
+        r1 = selftest_inject_tier_flip.inject(a, tiers)
+        r2 = selftest_inject_tier_flip.inject(b, tiers)
         self.assertEqual(r1, r2)
         key, effort, old, new = r1
         self.assertNotEqual(old, new)
         self.assertEqual(len(a["entries"][0]["evidence"]), 1)
         gate = check_staleness.evaluate_tier_gate(tiers, a)
         self.assertEqual(gate["single_source_idents"], [[key, effort]])
+        # Regression (live self-test run 1): today's data already moved the entry
+        # one band; the injected tier must still differ from HEAD.
+        moved = copy.deepcopy(tiers)
+        moved["entries"][0]["tier"] = selftest_inject_tier_flip.NEXT_TIER[tiers["entries"][0]["tier"]]
+        selftest_inject_tier_flip.inject(moved, tiers)
+        self.assertNotEqual(moved["entries"][0]["tier"], tiers["entries"][0]["tier"])
+        gate2 = check_staleness.evaluate_tier_gate(tiers, moved)
+        self.assertEqual(gate2["single_source_idents"], [[key, effort]])
         _, fact_efforts = validate.check_facts(facts, raw)
         self.assertEqual(validate.check_tiers(a, fact_efforts, facts["date"]), [])
 

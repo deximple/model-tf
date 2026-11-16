@@ -154,9 +154,9 @@ jobs:
           cat "$RUNNER_TEMP/pr-body.md" >> "$GITHUB_STEP_SUMMARY"
           requires_pr=$(jq -r '.requires_pr' "$RUNNER_TEMP/gate.json")
           case "$MODE" in
-            pr) target=pr ;;
-            direct) target=main ;;
-            *) if [ "$requires_pr" = "true" ]; then target=split; else target=main; fi ;;
+            pr) target="pr" ;;
+            direct) target="main" ;;
+            *) if [ "$requires_pr" = "true" ]; then target="split"; else target="main"; fi ;;
           esac
           echo "Apply target: $target (mode=$MODE, requires_pr=$requires_pr, base=$BASE_BRANCH)"
           echo "target=$target" >> "$GITHUB_OUTPUT"

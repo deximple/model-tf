@@ -82,13 +82,33 @@ Three layers exist across the ecosystem; this repo owns the first two:
   `push`/`pull_request` workflows, so the refresh explicitly dispatches
   `validate.yml` for the commits and PRs it creates.
 - **Schedule keepalive.** GitHub disables schedules in public repos after 60
-  days without activity. Every run re-enables the workflow through the API,
-  and the **45-day `--touch` heartbeat** also bumps `checkedAt` after live
-  verification.
+  days without activity. Three independent guards: the **45-day `--touch`**
+  refresh (bumps `checkedAt` after live verification), a **heartbeat commit**
+  to `.github/refresh-heartbeat` whenever `main` has been idle for 50 days
+  (even if every source is failing), and an API re-enable on every run.
 - One-time setting for the review-PR path: *Settings → Actions → General →
   Workflow permissions → "Allow GitHub Actions to create and approve pull
   requests"*. If it is off, the PR step fails and the alert issue says so;
   all `main` updates still land.
+
+## Self-Test (`selftest.yml`)
+
+Run **Actions → selftest → Run workflow** after changing `refresh.yml` or the
+repository's Actions settings. It calls the production `refresh.yml` three
+times against a throwaway `selftest/base` branch (never `main`):
+
+1. Simulated outage of `docs.x.ai` and `scale.com` plus an injected
+   single-source tier flip. It checks that the held commit lands on the base
+   branch, the review PR contains only the tier flip, the failed sources'
+   data is carried forward, `validate` goes green on both bot-made heads,
+   and an alert issue is opened.
+2. The same scenario again. It checks that no new commit is made, the PR is
+   unchanged, and the alert is not re-posted.
+3. A healthy run. It checks that the review PR is closed as superseded, the
+   alert is closed as recovered, and a heartbeat commit is pushed.
+
+The branches, PRs, issues, and label it creates are deleted at the end. It
+takes about 5 minutes.
 
 ## Compatibility
 
