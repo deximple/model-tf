@@ -1,0 +1,381 @@
+name: auto-repair
+
+# When a collector fails in a way code can fix (page layout changed or page
+# moved), Claude Code proposes a fix and a human reviews it as a PR.
+#
+#   propose  read-only token, no git credentials. Claude edits sources/ and
+#            tests/; deterministic checks (path allowlist, unit tests,
+#            validate.py, the failing source reports "ok" again, secret scan)
+#            decide whether the change is kept. Output: a patch artifact.
+#   publish  write token, never executes the proposed code: applies the
+#            patch and opens a review PR. Nothing is merged automatically.
+#   report   comments the outcome on the refresh-alert issue (one attempt per
+#            distinct failure).
+#
+# Requires a repository secret ANTHROPIC_API_KEY (Claude Console) or
+# CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`); without one it skips.
+
+on:
+  workflow_call:
+    inputs:
+      targets:
+        description: "JSON list of failing sources to repair; empty = every repairable failure found on a fresh run"
+        type: string
+        default: ""
+      base_branch:
+        type: string
+        default: "main"
+      alert_issue:
+        description: "refresh-alert issue number to report on (optional)"
+        type: string
+        default: ""
+      force:
+        description: "Retry even if this failure was already attempted or a PR is open"
+        type: boolean
+        default: false
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: false
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: false
+    outputs:
+      status:
+        description: "skipped-no-credentials | not-reproduced | already-proposed | already-attempted | fixed | no-fix | rejected-scope | tests-failed | still-failing | rejected-secret"
+        value: ${{ jobs.propose.outputs.status }}
+      pr_url:
+        value: ${{ jobs.publish.outputs.pr_url }}
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: 'JSON list, e.g. [{"collector":"tiers","source":"vals"}]; empty = detect on a fresh run'
+        required: false
+        default: ""
+      base_branch:
+        required: false
+        default: "main"
+      force:
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-repair-${{ inputs.base_branch || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BASE_BRANCH: ${{ inputs.base_branch || 'main' }}
+      ALERT_ISSUE: ${{ inputs.alert_issue || '' }}
+      FORCE: ${{ inputs.force && 'true' || 'false' }}
+      REQUESTED: ${{ inputs.targets || '' }}
+    outputs:
+      status: ${{ steps.check.outputs.status || steps.decide.outputs.status }}
+      branch: ${{ steps.reproduce.outputs.branch }}
+      slug: ${{ steps.reproduce.outputs.slug }}
+      fingerprint: ${{ steps.reproduce.outputs.fingerprint }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false # the agent gets no git push credentials
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install validator dependency
+        run: pip install jsonschema
+
+      - name: Check for a Claude credential
+        id: creds
+        env:
+          HAS_CREDENTIAL: ${{ secrets.ANTHROPIC_API_KEY != '' || secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: |
+          if [ "$HAS_CREDENTIAL" = "true" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::auto-repair skipped: add an ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN repository secret to enable it"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Reproduce on a fresh run
+        id: reproduce
+        run: |
+          before="$RUNNER_TEMP/before"
+          mkdir -p "$before"
+          python sources/fetch_vendor_facts.py --status-out "$before/status-facts.json" || true
+          python sources/fetch_artificial_analysis.py --status-out "$before/status-tiers.json" || true
+          git checkout -- model-facts.json model-tiers.json
+          targets=$(python3 scripts/auto_repair.py targets --status-dir "$before" --only "$REQUESTED")
+          slug=$(python3 scripts/auto_repair.py slug --targets "$targets")
+          {
+            echo "targets=$targets"
+            echo "slug=$slug"
+            echo "fingerprint=$(python3 scripts/auto_repair.py fingerprint --targets "$targets")"
+            echo "branch=auto-repair/${BASE_BRANCH}/${slug}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Repairable failures now: $targets"
+
+      - name: Decide whether to run the agent
+        id: decide
+        env:
+          CREDS: ${{ steps.creds.outputs.ok }}
+          TARGETS: ${{ steps.reproduce.outputs.targets }}
+          BRANCH: ${{ steps.reproduce.outputs.branch }}
+          FP: ${{ steps.reproduce.outputs.fingerprint }}
+        run: |
+          status=run
+          if [ "$CREDS" != "true" ]; then
+            status=skipped-no-credentials
+          elif [ -z "$TARGETS" ] || [ "$TARGETS" = "[]" ]; then
+            status=not-reproduced
+          elif [ "$FORCE" != "true" ]; then
+            open=$(gh pr list --head "$BRANCH" --state open --json number --jq 'length')
+            if [ "${open:-0}" != "0" ]; then
+              status=already-proposed
+            elif [ -n "$ALERT_ISSUE" ] && gh issue view "$ALERT_ISSUE" --json comments \
+                --jq '.comments[].body' | grep -q "auto-repair-fp:${FP}"; then
+              status=already-attempted
+            fi
+          fi
+          echo "Decision: $status"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Render the agent prompt
+        id: prompt
+        if: steps.decide.outputs.status == 'run'
+        env:
+          TARGETS: ${{ steps.reproduce.outputs.targets }}
+        run: |
+          delim="PROMPT_$(openssl rand -hex 8)"
+          {
+            echo "text<<${delim}"
+            python3 scripts/auto_repair.py prompt --targets "$TARGETS"
+            echo "${delim}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Claude Code proposes a fix
+        id: claude
+        if: steps.decide.outputs.status == 'run'
+        continue-on-error: true # judged by the deterministic checks below
+        uses: anthropics/claude-code-action@v1
+        env:
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }} # read-only job token, not the Claude App token
+          prompt: ${{ steps.prompt.outputs.text }}
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns 80
+            --allowedTools "Read,Edit,MultiEdit,Glob,Grep,Bash(python3:*),Bash(python:*)"
+            --json-schema '{"type":"object","properties":{"fixed":{"type":"boolean"},"root_cause":{"type":"string"},"changes":{"type":"string"}},"required":["fixed","root_cause","changes"]}'
+
+      # Everything below is deterministic. The agent's own claims are only
+      # quoted in the PR body, never trusted for the decision.
+      - name: Check the proposed change
+        id: check
+        if: steps.decide.outputs.status == 'run'
+        env:
+          TARGETS: ${{ steps.reproduce.outputs.targets }}
+          CLAUDE_CONCLUSION: ${{ steps.claude.outputs.conclusion || steps.claude.outcome }}
+          CLAUDE_RESULT: ${{ steps.claude.outputs.structured_output }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          out="$RUNNER_TEMP/repair"
+          mkdir -p "$out"
+          report="$out/report.md"
+          verdict() {
+            echo "status=$1" >> "$GITHUB_OUTPUT"
+            echo "Verdict: $1 — $2"
+            echo "### auto-repair: $1" >> "$GITHUB_STEP_SUMMARY"
+            echo "$2" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+          git checkout -- model-facts.json model-tiers.json 2>/dev/null || true
+
+          if ! scope=$(python3 scripts/auto_repair.py check-diff); then
+            case "$scope" in
+              "no code change proposed") verdict no-fix "Claude made no code change (agent: $CLAUDE_CONCLUSION)." ;;
+              *) verdict rejected-scope "$scope" ;;
+            esac
+          fi
+          if ! python -m unittest discover -s tests > "$out/tests.log" 2>&1; then
+            tail -n 30 "$out/tests.log"
+            verdict tests-failed "Unit tests fail with the proposed change."
+          fi
+          if ! python scripts/validate.py > "$out/validate.log" 2>&1; then
+            cat "$out/validate.log"
+            verdict tests-failed "validate.py fails with the proposed change."
+          fi
+          after="$out/after"
+          mkdir -p "$after"
+          python sources/fetch_vendor_facts.py --status-out "$after/status-facts.json" || true
+          python sources/fetch_artificial_analysis.py --status-out "$after/status-tiers.json" || true
+          git checkout -- model-facts.json model-tiers.json
+          if ! python3 scripts/auto_repair.py verify --targets "$TARGETS" --status-dir "$after" > "$out/verify.log"; then
+            cat "$out/verify.log"
+            verdict still-failing "The source still fails after the proposed change."
+          fi
+          git add -A sources tests
+          git diff --cached > "$out/repair.patch"
+          if ! python3 scripts/auto_repair.py scan-patch "$out/repair.patch"; then
+            verdict rejected-secret "The patch contains secret-like material; discarded."
+          fi
+
+          {
+            echo "Automated repair proposed by **Claude Code** after the refresh found a collector failing in a way that points to a code problem."
+            echo
+            echo "## Failing sources"
+            python3 scripts/auto_repair.py markdown --targets "$TARGETS"
+            echo
+            echo "## Agent summary (unverified)"
+            python3 - <<'PY'
+          import json, os
+          raw = os.environ.get("CLAUDE_RESULT") or "{}"
+          try:
+              r = json.loads(raw)
+          except ValueError:
+              r = {}
+          def clip(s, n=1500):
+              s = str(s or "").strip()
+              return s if len(s) <= n else s[:n] + "…"
+          print(f"- **Root cause:** {clip(r.get('root_cause')) or '(not provided)'}")
+          print(f"- **Changes:** {clip(r.get('changes')) or '(not provided)'}")
+          PY
+            echo
+            echo "## Verified by the workflow (not by the agent)"
+            echo "- Changed files are confined to \`sources/\` and \`tests/\`: $scope"
+            echo "- \`python -m unittest discover -s tests\`: $(tail -n 1 "$out/tests.log")"
+            echo "- \`python scripts/validate.py\`: $(tail -n 1 "$out/validate.log")"
+            echo "- Fresh collector run, source status after the change:"
+            sed 's/^/  - /' "$out/verify.log"
+            echo "- Secret scan of the patch: clean"
+            echo
+            echo "Review the diff before merging; nothing is merged automatically."
+            echo
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } > "$report"
+          git diff --cached --stat
+          verdict fixed "Patch verified: $scope"
+
+      - name: Upload the verified patch
+        if: steps.check.outputs.status == 'fixed'
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-repair
+          path: |
+            ${{ runner.temp }}/repair/repair.patch
+            ${{ runner.temp }}/repair/report.md
+          retention-days: 7
+
+  publish:
+    needs: propose
+    if: needs.propose.outputs.status == 'fixed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BASE_BRANCH: ${{ inputs.base_branch || 'main' }}
+      BRANCH: ${{ needs.propose.outputs.branch }}
+      SLUG: ${{ needs.propose.outputs.slug }}
+    outputs:
+      pr_url: ${{ steps.pr.outputs.pull-request-url }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: auto-repair
+          path: ${{ runner.temp }}/repair
+
+      # No code from the patch is executed in this job (it holds a write token).
+      - name: Apply the verified patch
+        run: |
+          patch="$RUNNER_TEMP/repair/repair.patch"
+          git apply --numstat "$patch" | awk '{print $3}' > "$RUNNER_TEMP/paths.txt"
+          if grep -vE '^(sources|tests)/' "$RUNNER_TEMP/paths.txt"; then
+            echo "::error::patch touches paths outside sources/ and tests/"
+            exit 1
+          fi
+          git apply --index "$patch"
+          git diff --cached --stat
+
+      - name: Open the review PR
+        id: pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          base: ${{ env.BASE_BRANCH }}
+          branch: ${{ env.BRANCH }}
+          title: "fix(sources): auto-repair ${{ env.SLUG }} collector"
+          commit-message: "fix(sources): auto-repair ${{ env.SLUG }} collector"
+          body-path: ${{ runner.temp }}/repair/report.md
+          labels: auto-repair
+          delete-branch: true
+          add-paths: |
+            sources
+            tests
+
+      # GITHUB_TOKEN-made PRs trigger no workflows; dispatch the checks explicitly.
+      - name: Run validate on the PR branch
+        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        run: gh workflow run validate.yml --ref "$BRANCH"
+
+  report:
+    needs: [propose, publish]
+    if: always() && needs.propose.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ALERT_ISSUE: ${{ inputs.alert_issue || '' }}
+      STATUS: ${{ needs.propose.outputs.status }}
+      PROPOSE_RESULT: ${{ needs.propose.result }}
+      PR_URL: ${{ needs.publish.outputs.pr_url }}
+      FP: ${{ needs.propose.outputs.fingerprint }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Summarize and report on the alert issue
+        run: |
+          status="${STATUS:-error}"
+          [ "$PROPOSE_RESULT" = "success" ] || status="${status} (propose job: ${PROPOSE_RESULT})"
+          case "$status" in
+            fixed) msg="Auto-repair proposed a verified fix: ${PR_URL:-PR creation failed, see run}" ;;
+            no-fix) msg="Auto-repair ran; Claude made no code change (likely not fixable in code)." ;;
+            rejected-scope|tests-failed|still-failing|rejected-secret) msg="Auto-repair ran; the proposed change was rejected by the checks: ${status}." ;;
+            *) msg="Auto-repair: ${status}." ;;
+          esac
+          echo "$msg"
+          { echo "## auto-repair"; echo "$msg"; echo; echo "Run: $RUN_URL"; } >> "$GITHUB_STEP_SUMMARY"
+          case "$STATUS" in
+            ""|skipped-no-credentials|not-reproduced|already-proposed|already-attempted) exit 0 ;;
+          esac
+          if [ -n "$ALERT_ISSUE" ]; then
+            gh issue comment "$ALERT_ISSUE" --body "$(printf '%s\n\nRun: %s\n\n<!-- auto-repair-fp:%s -->\n' "$msg" "$RUN_URL" "$FP")"
+          fi

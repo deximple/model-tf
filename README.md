@@ -91,6 +91,35 @@ Three layers exist across the ecosystem; this repo owns the first two:
   requests"*. If it is off, the PR step fails and the alert issue says so;
   all `main` updates still land.
 
+## Auto-Repair with Claude Code (`auto-repair.yml`)
+
+When a refresh finds a source failing in a way a code change can fix, Claude
+Code proposes the fix as a review PR. That covers a parser that returns nothing
+and a page that has moved, but not outages, throttling, or TLS errors.
+
+- **The agent never holds write access.** The `propose` job runs
+  [Claude Code Action](https://github.com/anthropics/claude-code-action) with
+  Claude Opus 5.5 under a read-only token and no git credentials. Its tools are
+  limited to reading and editing files plus running `python3`.
+- **Deterministic checks decide, not the agent.** A proposal is kept only if:
+  - it changes files under `sources/` and `tests/` only;
+  - the unit tests and `validate.py` pass;
+  - a fresh collector run shows every target source `ok` again;
+  - the patch passes a secret scan.
+- **Publishing runs no proposed code.** The `publish` job applies the checked
+  patch and opens a PR labelled `auto-repair`. Nothing is merged automatically.
+- **Each failure gets one attempt.** The outcome is commented on the
+  `refresh-alert` issue, and an open PR or an earlier attempt at the same
+  failure skips the agent.
+- **Setup:** add the repository secret `ANTHROPIC_API_KEY` (from the
+  [Claude Console](https://platform.claude.com)) or `CLAUDE_CODE_OAUTH_TOKEN`
+  (from `claude setup-token`) under *Settings → Secrets and variables →
+  Actions*. Without either secret the job skips with a notice.
+- **Manual run:** *Actions → auto-repair → Run workflow*.
+- **Live test:** *Actions → selftest-repair → Run workflow*. It recreates the
+  2026-11-16 Vals breakage on a throwaway branch and checks that the agent's
+  fix arrives as a verified PR. Each run costs one agent call.
+
 ## Self-Test (`selftest.yml`)
 
 Run **Actions → selftest → Run workflow** after changing `refresh.yml` or the

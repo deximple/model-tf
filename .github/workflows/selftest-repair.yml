@@ -1,0 +1,118 @@
+name: selftest-repair
+
+# End-to-end check of auto-repair.yml with the real Claude Code agent. A
+# throwaway selftest/repair-base branch gets the Vals collector exactly as it
+# was before the 2026-11-16 fix (old URL, old page layout), so the live site
+# makes it fail for real. auto-repair must then deliver a verified review PR,
+# report on an alert issue, and deduplicate a second run. main is never
+# touched; everything is cleaned up at the end.
+#
+# Costs one agent run (Claude Opus 5.5) per execution. Needs the
+# ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN repository secret.
+
+on:
+  workflow_dispatch:
+  push: # TEMPORARY: pre-merge live verification of this branch; removed before merge
+    branches: [claude/beautiful-bell-fewls0]
+    paths: [".github/workflows/selftest-repair.yml"]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: selftest-repair
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    outputs:
+      alert_issue: ${{ steps.issue.outputs.number }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install jsonschema
+      - name: Remove leftovers from earlier runs
+        run: python3 scripts/selftest_repair_verify.py cleanup
+      - name: Create the broken sandbox base
+        run: |
+          python3 scripts/selftest_break_vals.py
+          python -m unittest discover -s tests
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -qam "selftest: recreate the 2026-11-16 Vals breakage"
+          git push -q origin "HEAD:refs/heads/selftest/repair-base"
+      - name: Open a stand-in alert issue
+        id: issue
+        run: |
+          gh label create refresh-alert-selftest --color B60205 --description "Self-test alert" --force >/dev/null
+          url=$(gh issue create --label refresh-alert-selftest \
+            --title "[selftest] auto-repair target: tiers/vals" \
+            --body "Stand-in refresh-alert issue for selftest-repair.yml.")
+          echo "number=${url##*/}" >> "$GITHUB_OUTPUT"
+
+  repair:
+    needs: prepare
+    uses: ./.github/workflows/auto-repair.yml
+    with:
+      base_branch: selftest/repair-base
+      alert_issue: ${{ needs.prepare.outputs.alert_issue }}
+      force: true
+    secrets: inherit
+
+  repair_again:
+    needs: [prepare, repair]
+    uses: ./.github/workflows/auto-repair.yml
+    with:
+      base_branch: selftest/repair-base
+      alert_issue: ${{ needs.prepare.outputs.alert_issue }}
+    secrets: inherit
+
+  verify:
+    needs: [prepare, repair, repair_again]
+    if: always() && needs.prepare.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      checks: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      REPAIR_STATUS: ${{ needs.repair.outputs.status }}
+      REPAIR_AGAIN_STATUS: ${{ needs.repair_again.outputs.status }}
+      ALERT_ISSUE: ${{ needs.prepare.outputs.alert_issue }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Verify the agent's repair
+        run: python3 scripts/selftest_repair_verify.py after-repair
+
+  cleanup:
+    needs: [prepare, repair, repair_again, verify]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Delete sandbox branches, PRs, issues
+        run: python3 scripts/selftest_repair_verify.py cleanup

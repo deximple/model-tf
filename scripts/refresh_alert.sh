@@ -99,10 +99,16 @@ body="$work/alert.md"
   echo "<!-- refresh-alert-fp:${fp} -->"
 } > "$body"
 
+emit_issue() {
+  if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "issue_number=$1" >> "$GITHUB_OUTPUT"; fi
+}
 if [ -z "$existing" ]; then
-  gh issue create --title "$title" --label "$label" --body-file "$body"
+  url="$(gh issue create --title "$title" --label "$label" --body-file "$body")"
+  echo "$url"
+  emit_issue "${url##*/}"
   exit 0
 fi
+emit_issue "$existing"
 last="$(gh issue view "$existing" --json body,comments \
   --jq '([.body] + [.comments[].body]) | map(select(test("refresh-alert-fp:"))) | last // ""')"
 if printf '%s' "$last" | grep -q "refresh-alert-fp:${fp}"; then

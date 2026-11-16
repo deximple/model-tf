@@ -70,6 +70,9 @@ jobs:
       pull-requests: write # open/close the tier review PR
       issues: write # open/update/close the refresh-alert issue
       actions: write # dispatch validate.yml + keep this schedule enabled
+    outputs:
+      repair_targets: ${{ steps.repair_targets.outputs.targets }}
+      alert_issue: ${{ steps.alert.outputs.issue_number }}
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -277,6 +280,7 @@ jobs:
       # Never fail silently: any failed step, degraded source, or PR problem
       # opens (or updates) one "refresh-alert" issue; a clean run closes it.
       - name: Report refresh health (alert issue)
+        id: alert
         if: always()
         env:
           JOB_STATUS: ${{ job.status }}
@@ -289,6 +293,20 @@ jobs:
             echo "::error::checkout did not complete; GitHub's failed-run notification is the only alert"
             exit 1
           fi
+
+      # Failures that look like a code problem (parser / moved page), as
+      # opposed to outages, are handed to the auto-repair job below.
+      - name: Find failures a code change could fix
+        id: repair_targets
+        if: always()
+        run: |
+          if [ -f scripts/auto_repair.py ]; then
+            targets=$(python3 scripts/auto_repair.py targets --status-dir "$RUNNER_TEMP")
+          else
+            targets="[]"
+          fi
+          echo "Repairable: $targets"
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
 
       # Public repos auto-disable scheduled workflows after 60 days without
       # repository activity. Two independent guards:
@@ -321,3 +339,20 @@ jobs:
             commit -q -m "chore: refresh heartbeat (keep scheduled workflow active)" -m "Run: ${RUN_URL}"
           git -C "$wt" push origin "HEAD:${BASE_BRANCH}"
           git worktree remove --force "$wt"
+
+  # Claude Code proposes a fix as a review PR (see auto-repair.yml). Never in
+  # self-test sandboxes, whose failures are simulated.
+  repair:
+    needs: refresh
+    if: always() && !inputs.sandbox_branch && needs.refresh.outputs.repair_targets != '' && needs.refresh.outputs.repair_targets != '[]'
+    uses: ./.github/workflows/auto-repair.yml
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: write
+    with:
+      targets: ${{ needs.refresh.outputs.repair_targets }}
+      base_branch: main
+      alert_issue: ${{ needs.refresh.outputs.alert_issue }}
+    secrets: inherit
