@@ -236,6 +236,47 @@ class FetchArtificialAnalysisTests(unittest.TestCase):
         self.assertIn(("moonshotai/kimi-k3", "default"), entries)
 
 
+class ValsParserTests(unittest.TestCase):
+    @staticmethod
+    def _island(props: dict) -> str:
+        import html as _html
+
+        return f'<astro-island component-url="/_astro/X.js" props="{_html.escape(json.dumps(props), quote=True)}"></astro-island>'
+
+    def test_parses_current_vals_index_page_layout(self) -> None:
+        # Shape observed live on https://www.vals.ai/benchmarks/vals_index (2026-11-16).
+        item = lambda model, acc: [0, {"model": [0, model], "accuracy": [0, acc], "position": [0, 1]}]  # noqa: E731
+        page = self._island({"current": [0, "vals_index"]}) + self._island(
+            {
+                "regularLeaderboardItems": [1, [item("Claude Fable 5.2", "71.31"), item("Claude Opus 5.5", "70.14")]],
+                "openSourceLeaderboardItems": [1, [item("GLM 5.3", "55.04"), item("Claude Opus 5.5", "70.14")]],
+            }
+        )
+        rows = fetch_aa.parse_vals_benchmarks(page)
+        self.assertEqual(
+            rows,
+            [
+                {"model_label": "Claude Fable 5.2", "score": 71.3},
+                {"model_label": "Claude Opus 5.5", "score": 70.1},
+                {"model_label": "GLM 5.3", "score": 55.0},
+            ],
+        )
+
+    def test_still_parses_legacy_hub_layout(self) -> None:
+        pt = lambda label, score: [0, {"label": [0, label], "score": [0, score]}]  # noqa: E731
+        page = self._island({"companies": [1, [[0, {"points": [1, [pt("Kimi K3", 53.0)]]}]]]})
+        self.assertEqual(fetch_aa.parse_vals_benchmarks(page), [{"model_label": "Kimi K3", "score": 53.0}])
+
+    def test_index_page_without_scores_parses_to_nothing(self) -> None:
+        # What /benchmarks returned after the redesign: only navigation islands.
+        page = self._island({"sets": [1, [[0, {"name": [0, "Vals Index"], "slug": [0, "vals_index"]}]]]})
+        self.assertEqual(fetch_aa.parse_vals_benchmarks(page), [])
+
+    def test_legacy_vals_evidence_is_still_benchmark_managed(self) -> None:
+        entry = {"evidence": [_ev(fetch_aa.AA_URL, "AA 1", "2026-11-01"), _ev(fetch_aa.VALS_LEGACY_URL, "Vals 1", "2026-11-01")]}
+        self.assertTrue(fetch_aa.is_aa_managed(entry))
+
+
 class StalenessTests(unittest.TestCase):
     def test_parse_args_and_tier_gate(self) -> None:
         self.assertEqual(check_staleness.parse_args([]).days, 30)

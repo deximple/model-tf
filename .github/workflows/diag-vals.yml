@@ -16,37 +16,22 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5
-      - name: Inspect vals.ai/benchmarks/vals_index
+      - name: Run the fixed Vals parser live through the collector's fetch
         run: |
           python3 - <<'EOF'
-          import html, json, re, sys, urllib.request
+          import json, sys
           sys.path.insert(0, "sources")
           import fetch_artificial_analysis as aa
-          url = "https://www.vals.ai/benchmarks/vals_index"
-          req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) model-tf-refresh/1.0"})
-          with urllib.request.urlopen(req, timeout=60) as r:
-              print("status", r.status, "final_url", r.geturl())
-              page = r.read().decode("utf-8", "replace")
-          print("length", len(page))
-          for pat in ['props="', "companies", "points", "label", "score", "accuracy", "Opus", "GPT", "Gemini"]:
-              print(f"count {pat!r}: {page.count(pat)}")
-          print("current parser rows on this page:", len(aa.parse_vals_benchmarks(page)))
-          islands = re.findall(r"<astro-island[^>]*>", page)
-          print("astro islands:", len(islands))
-          for tag in islands:
-              comp = re.search(r'component-url="([^"]*)"', tag)
-              props = re.search(r'props="([^"]*)"', tag)
-              raw = html.unescape(props.group(1)) if props else ""
-              keys = []
-              try:
-                  keys = list(json.loads(raw).keys()) if raw else []
-              except Exception as exc:
-                  keys = [f"<json error {exc}>"]
-              print("\n== island", comp.group(1) if comp else None, "props-len", len(raw), "keys", keys)
-              if any(k in raw for k in ("score", "accuracy", "Opus", "points")):
-                  print(raw[:2500])
-          for pat in ["Opus", "accuracy"]:
-              i = page.find(pat)
-              if i >= 0:
-                  print(f"\n--- context {pat!r} @ {i}:\n{page[max(0, i-800):i+800]}")
+          rows, err = aa._safe_fetch_list("Vals AI", aa.parse_vals_benchmarks, aa.VALS_URL)
+          print("url", aa.VALS_URL, "error", err, "rows", len(rows))
+          for r in rows[:12]:
+              print("  ", r)
+          facts = json.load(open("model-facts.json"))
+          idx = aa.build_auto_name_index(facts["models"])
+          matched = [r for r in rows if aa.resolve_model(aa.parse_name(r["model_label"])[0], idx)]
+          print("matched to model-facts.json:", len(matched), "of", len(rows))
+          tiers = json.load(open("model-tiers.json"))
+          had = sum(1 for e in tiers["entries"] if any("vals.ai" in v["source"] for v in e["evidence"]))
+          print("entries with Vals evidence on this commit:", had)
+          sys.exit(0 if rows and matched else 1)
           EOF
