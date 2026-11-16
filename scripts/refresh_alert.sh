@@ -8,13 +8,15 @@
 #   JOB_STATUS   job.status of the refresh job (success | failure | cancelled)
 #   PR_OUTCOME   outcome of the review-PR step (success | failure | skipped | "")
 #   RUN_URL      link to the workflow run
+#   ALERT_LABEL / ALERT_TITLE  default refresh-alert (self-test uses its own)
 #   STATUS_DIR   directory holding status-facts.json / status-tiers.json
 #   GITHUB_STEP_SUMMARY (optional) markdown summary file
 #
 # Exit code is 0 unless a gh call itself fails.
 set -euo pipefail
 
-label="refresh-alert"
+label="${ALERT_LABEL:-refresh-alert}"
+title="${ALERT_TITLE:-refresh: automated data refresh needs attention}"
 status_dir="${STATUS_DIR:-${RUNNER_TEMP:-.}}"
 summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
 work="$(mktemp -d)"
@@ -98,7 +100,7 @@ body="$work/alert.md"
 } > "$body"
 
 if [ -z "$existing" ]; then
-  gh issue create --title "refresh: automated data refresh needs attention" --label "$label" --body-file "$body"
+  gh issue create --title "$title" --label "$label" --body-file "$body"
   exit 0
 fi
 last="$(gh issue view "$existing" --json body,comments \

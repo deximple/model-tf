@@ -33,3 +33,19 @@ jobs:
 
       - name: Staleness report
         run: python sources/check_staleness.py
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      # actionlint also runs shellcheck on every `run:` block (shellcheck is
+      # preinstalled on ubuntu runners).
+      - name: Lint workflow files (actionlint)
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color
+
+      - name: Lint shell scripts (shellcheck)
+        run: shellcheck scripts/*.sh

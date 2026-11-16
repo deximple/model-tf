@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 import urllib.error
 from datetime import date
 from pathlib import Path
@@ -23,6 +24,8 @@ import fetch_vendor_facts as fetch_vf  # noqa: E402
 import hold_tier_shifts  # noqa: E402
 import jsonschema  # noqa: E402
 import refresh_common  # noqa: E402
+import selftest_inject_tier_flip  # noqa: E402
+import selftest_verify  # noqa: E402
 import validate  # noqa: E402
 
 
@@ -267,6 +270,74 @@ class StalenessTests(unittest.TestCase):
 
 def _ev(source: str, note: str, checked: str) -> dict:
     return {"kind": "benchmark", "source": source, "checkedAt": checked, "note": note}
+
+
+class SelfTestHelperTests(unittest.TestCase):
+    def test_simulated_outage_only_hits_listed_hosts(self) -> None:
+        calls = []
+
+        def opener(req, timeout):
+            calls.append(req.full_url)
+            raise AssertionError("simulated host must never be contacted")
+
+        old = os.environ.get(refresh_common.SIMULATE_FAIL_ENV)
+        os.environ[refresh_common.SIMULATE_FAIL_ENV] = "docs.x.ai, Scale.com"
+        try:
+            sleeps: list[float] = []
+            with self.assertRaises(urllib.error.URLError):
+                refresh_common.fetch_url("https://scale.com/leaderboard", opener=opener, sleep=sleeps.append)
+            self.assertEqual(calls, [])
+            self.assertEqual(sleeps, [3.0, 6.0])  # retry path is exercised too
+            self.assertFalse(refresh_common._simulated_outage("https://platform.claude.com/docs"))
+        finally:
+            if old is None:
+                os.environ.pop(refresh_common.SIMULATE_FAIL_ENV, None)
+            else:
+                os.environ[refresh_common.SIMULATE_FAIL_ENV] = old
+        with unittest.mock.patch.dict(os.environ, {refresh_common.SIMULATE_FAIL_ENV: ""}):
+            self.assertFalse(refresh_common._simulated_outage("https://scale.com/leaderboard"))
+
+    def test_inject_flip_is_deterministic_single_source_and_valid(self) -> None:
+        tiers, _ = validate.load_json(validate.TIERS_PATH)
+        facts, raw = validate.load_json(validate.FACTS_PATH)
+        a, b = copy.deepcopy(tiers), copy.deepcopy(tiers)
+        r1 = selftest_inject_tier_flip.inject(a)
+        r2 = selftest_inject_tier_flip.inject(b)
+        self.assertEqual(r1, r2)
+        key, effort, old, new = r1
+        self.assertNotEqual(old, new)
+        self.assertEqual(len(a["entries"][0]["evidence"]), 1)
+        gate = check_staleness.evaluate_tier_gate(tiers, a)
+        self.assertEqual(gate["single_source_idents"], [[key, effort]])
+        _, fact_efforts = validate.check_facts(facts, raw)
+        self.assertEqual(validate.check_tiers(a, fact_efforts, facts["date"]), [])
+
+    def test_tier_diffs_classifies_changes(self) -> None:
+        base = {
+            "date": "2026-11-15",
+            "entries": [
+                {"key": "a/b", "effort": "max", "tier": "mid", "rank": {"r": 1},
+                 "evidence": [_ev(fetch_aa.AA_URL, "AA 40", "2026-11-01")]},
+                {"key": "c/d", "effort": "default", "tier": "low", "rank": {"r": 2},
+                 "evidence": [_ev(fetch_aa.AA_URL, "AA 20", "2026-11-01")]},
+            ],
+        }
+        other = copy.deepcopy(base)
+        other["date"] = "2026-11-16"
+        other["entries"][0]["tier"] = "frontier"
+        other["entries"][0]["evidence"][0]["checkedAt"] = "2026-11-16"
+        other["entries"][1]["evidence"][0]["note"] = "AA 21"
+        diffs = selftest_verify.tier_diffs(base, other)
+        self.assertEqual(
+            diffs,
+            [
+                ("<top>", "", "date"),
+                ("a/b", "max", "tier"),
+                ("a/b", "max", "evidence.checkedAt"),
+                ("c/d", "default", "evidence"),
+            ],
+        )
+        self.assertEqual(selftest_verify.tier_diffs(base, copy.deepcopy(base)), [])
 
 
 class RefreshCommonTests(unittest.TestCase):
@@ -672,6 +743,9 @@ class RefreshAlertScriptTests(unittest.TestCase):
                 "RUN_URL": "https://github.com/o/r/actions/runs/1",
                 "JOB_STATUS": "success",
                 "PR_OUTCOME": "skipped",
+                # Job-level env of a self-test refresh run must not leak in.
+                "ALERT_LABEL": "refresh-alert",
+                "ALERT_TITLE": "refresh: automated data refresh needs attention",
             }
         )
         env.update(env_overrides)

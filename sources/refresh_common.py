@@ -7,14 +7,21 @@
   historical ``--touch`` style argument handling).
 - ``write_status``: per-source health report consumed by
   ``.github/workflows/refresh.yml`` to open or close the refresh alert issue.
+
+Self-test hook: when ``MODEL_TF_SIMULATE_FAIL_HOSTS`` (comma-separated host
+names) is set, every fetch to those hosts fails with a retryable error, so the
+retry, per-source isolation, carry-forward, and alert paths can be exercised
+live by ``.github/workflows/selftest.yml``. Production runs never set it.
 """
 
 import http.client
 import json
+import os
 import re
 import ssl
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any, Callable
@@ -23,6 +30,13 @@ USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) model-tf-refresh/1
 
 # HTTP status codes worth retrying; any other 4xx is a permanent failure.
 RETRYABLE_HTTP = {408, 425, 429, 500, 502, 503, 504}
+
+SIMULATE_FAIL_ENV = "MODEL_TF_SIMULATE_FAIL_HOSTS"
+
+
+def _simulated_outage(url: str) -> bool:
+    hosts = {h.strip().lower() for h in os.environ.get(SIMULATE_FAIL_ENV, "").split(",") if h.strip()}
+    return bool(hosts) and (urllib.parse.urlparse(url).hostname or "").lower() in hosts
 
 
 def _is_retryable(exc: BaseException) -> bool:
@@ -49,6 +63,8 @@ def fetch_url(
     last_exc: BaseException | None = None
     for attempt in range(1, attempts + 1):
         try:
+            if _simulated_outage(url):
+                raise urllib.error.URLError(f"simulated outage ({SIMULATE_FAIL_ENV})")
             with opener(req, timeout=timeout) as resp:
                 return resp.read().decode("utf-8", errors="replace")
         except Exception as exc:  # noqa: BLE001 - re-raised below when permanent
