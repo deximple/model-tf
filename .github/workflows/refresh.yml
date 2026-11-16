@@ -22,6 +22,36 @@ on:
         required: false
         default: false
         type: boolean
+  # Called by selftest.yml to run this exact workflow against a throwaway
+  # selftest/* branch. The sandbox inputs are never set by schedule/dispatch.
+  workflow_call:
+    inputs:
+      mode:
+        type: string
+        default: "conditional"
+      touch:
+        type: boolean
+        default: false
+      sandbox_branch:
+        description: "Self-test only: selftest/* branch used instead of main"
+        type: string
+        default: ""
+      simulate_fail_hosts:
+        description: "Self-test only: comma-separated hosts whose fetches fail"
+        type: string
+        default: ""
+      inject_tier_flip:
+        description: "Self-test only: inject one single-source tier flip"
+        type: boolean
+        default: false
+      heartbeat_after_days:
+        description: "Idle days on the base branch before a heartbeat commit"
+        type: string
+        default: "50"
+      touch_after_days:
+        description: "Idle days before a --touch refresh re-verifies and bumps checkedAt"
+        type: string
+        default: "45"
 
 # Never run two refreshes at once (schedule + manual dispatch would race on push).
 concurrency:
@@ -45,11 +75,33 @@ jobs:
       GH_REPO: ${{ github.repository }}
       MODE: ${{ inputs.mode || 'conditional' }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      PR_BRANCH: refresh/model-data
+      # Production: main / refresh/model-data / refresh-alert.
+      # Self-test: selftest/<x> / selftest/<x>-review / refresh-alert-selftest.
+      BASE_BRANCH: ${{ inputs.sandbox_branch || 'main' }}
+      PR_BRANCH: ${{ inputs.sandbox_branch && format('{0}-review', inputs.sandbox_branch) || 'refresh/model-data' }}
+      ALERT_LABEL: ${{ inputs.sandbox_branch && 'refresh-alert-selftest' || 'refresh-alert' }}
+      ALERT_TITLE: "${{ inputs.sandbox_branch && '[selftest] refresh: automated data refresh needs attention' || 'refresh: automated data refresh needs attention' }}"
+      MODEL_TF_SIMULATE_FAIL_HOSTS: ${{ inputs.simulate_fail_hosts || '' }}
+      HEARTBEAT_AFTER_DAYS: ${{ inputs.heartbeat_after_days || '50' }}
+      TOUCH_AFTER_DAYS: ${{ inputs.touch_after_days || '45' }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Prepare self-test sandbox branch
+        if: inputs.sandbox_branch
+        run: |
+          case "$BASE_BRANCH" in
+            selftest/*) ;;
+            *) echo "::error::sandbox_branch must start with selftest/ (got '$BASE_BRANCH')"; exit 1 ;;
+          esac
+          if ! git ls-remote --exit-code --heads origin "$BASE_BRANCH" >/dev/null; then
+            git push origin "HEAD:refs/heads/$BASE_BRANCH"
+          fi
+          git fetch origin "$BASE_BRANCH"
+          git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH"
+          echo "Self-test: working on $BASE_BRANCH ($(git rev-parse --short HEAD)); simulated outages: ${MODEL_TF_SIMULATE_FAIL_HOSTS:-none}"
 
       - uses: actions/setup-python@v6
         with:
@@ -58,7 +110,7 @@ jobs:
       - name: Install validator dependency
         run: pip install jsonschema
 
-      - name: Determine whether heartbeat touch is needed (>45d since last commit)
+      - name: Determine whether a --touch refresh is needed (idle >= TOUCH_AFTER_DAYS)
         id: touch_check
         env:
           FORCE_TOUCH: ${{ inputs.touch }}
@@ -70,8 +122,8 @@ jobs:
           last_ts=$(git log -1 --format=%ct HEAD)
           now_ts=$(date +%s)
           age_days=$(( (now_ts - last_ts) / 86400 ))
-          echo "Last commit age: ${age_days} days"
-          if [ "$age_days" -ge 45 ]; then
+          echo "Last commit age: ${age_days} days (touch after ${TOUCH_AFTER_DAYS})"
+          if [ "$age_days" -ge "$TOUCH_AFTER_DAYS" ]; then
             echo "flag=--touch" >> "$GITHUB_OUTPUT"
           else
             echo "flag=" >> "$GITHUB_OUTPUT"
@@ -83,12 +135,16 @@ jobs:
       - name: Refresh vendor facts from official docs
         env:
           TOUCH_FLAG: ${{ steps.touch_check.outputs.flag }}
-        run: python sources/fetch_vendor_facts.py $TOUCH_FLAG --status-out "$RUNNER_TEMP/status-facts.json"
+        run: python sources/fetch_vendor_facts.py ${TOUCH_FLAG:+"$TOUCH_FLAG"} --status-out "$RUNNER_TEMP/status-facts.json"
 
       - name: Refresh benchmark-sourced tier entries
         env:
           TOUCH_FLAG: ${{ steps.touch_check.outputs.flag }}
-        run: python sources/fetch_artificial_analysis.py $TOUCH_FLAG --status-out "$RUNNER_TEMP/status-tiers.json"
+        run: python sources/fetch_artificial_analysis.py ${TOUCH_FLAG:+"$TOUCH_FLAG"} --status-out "$RUNNER_TEMP/status-tiers.json"
+
+      - name: "Self-test: inject a single-source tier flip"
+        if: inputs.inject_tier_flip && inputs.sandbox_branch
+        run: python scripts/selftest_inject_tier_flip.py
 
       - name: Validate refreshed data
         run: python scripts/validate.py
@@ -103,11 +159,11 @@ jobs:
           cat "$RUNNER_TEMP/pr-body.md" >> "$GITHUB_STEP_SUMMARY"
           requires_pr=$(jq -r '.requires_pr' "$RUNNER_TEMP/gate.json")
           case "$MODE" in
-            pr) target=pr ;;
-            direct) target=main ;;
-            *) if [ "$requires_pr" = "true" ]; then target=split; else target=main; fi ;;
+            pr) target="pr" ;;
+            direct) target="main" ;;
+            *) if [ "$requires_pr" = "true" ]; then target="split"; else target="main"; fi ;;
           esac
-          echo "Apply target: $target (mode=$MODE, requires_pr=$requires_pr)"
+          echo "Apply target: $target (mode=$MODE, requires_pr=$requires_pr, base=$BASE_BRANCH)"
           echo "target=$target" >> "$GITHUB_OUTPUT"
 
       # conditional mode + single-source tier flip: everything except the
@@ -140,15 +196,15 @@ jobs:
           } > "$RUNNER_TEMP/commit-msg.txt"
           git commit -F "$RUNNER_TEMP/commit-msg.txt"
           for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
+            if git push origin "HEAD:${BASE_BRANCH}"; then
               echo "pushed=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            echo "Push attempt ${attempt} rejected; rebasing onto latest main"
+            echo "Push attempt ${attempt} rejected; rebasing onto latest ${BASE_BRANCH}"
             sleep $(( attempt * 5 ))
-            git pull --rebase origin main
+            git pull --rebase origin "$BASE_BRANCH"
           done
-          echo "::error::Could not push the refresh commit to main after 3 attempts"
+          echo "::error::Could not push the refresh commit to ${BASE_BRANCH} after 3 attempts"
           exit 1
 
       - name: Close superseded tier review PR
@@ -157,7 +213,7 @@ jobs:
           state=$(gh pr view "$PR_BRANCH" --json state --jq .state 2>/dev/null || true)
           if [ "$state" = "OPEN" ]; then
             gh pr close "$PR_BRANCH" --delete-branch \
-              --comment "Superseded by ${RUN_URL}: the gated tier change is no longer present (or was applied directly), so main is already up to date."
+              --comment "Superseded by ${RUN_URL}: the gated tier change is no longer present (or was applied directly), so ${BASE_BRANCH} is already up to date."
           fi
 
       - name: Prepare review PR contents
@@ -169,7 +225,7 @@ jobs:
           if [ "$TARGET" = "split" ]; then
             cp "$RUNNER_TEMP/model-tiers.full.json" model-tiers.json
             {
-              echo "> Only the tier changes below are held for review. Every other fact, rank, and evidence update from this refresh was already committed to \`main\`."
+              echo "> Only the tier changes below are held for review. Every other fact, rank, and evidence update from this refresh was already committed to \`${BASE_BRANCH}\`."
               echo
               echo "## Single-source tier changes awaiting review"
               jq -r '.single_source_tier_shifts[] | "- " + .' "$RUNNER_TEMP/gate.json"
@@ -192,9 +248,10 @@ jobs:
         continue-on-error: true # reported in the alert issue below
         uses: peter-evans/create-pull-request@v8
         with:
+          base: ${{ env.BASE_BRANCH }}
           branch: ${{ env.PR_BRANCH }}
           delete-branch: true
-          title: "chore: review model tier shift"
+          title: "${{ inputs.sandbox_branch && '[selftest] chore: review model tier shift' || 'chore: review model tier shift' }}"
           commit-message: "chore: refresh model facts and tiers"
           body-path: ${{ runner.temp }}/pr-final.md
           add-paths: |
@@ -211,7 +268,7 @@ jobs:
           PR_OP: ${{ steps.open_pr.outputs.pull-request-operation }}
         run: |
           if [ "$PUSHED" = "true" ]; then
-            gh workflow run validate.yml --ref main || echo "::warning::could not dispatch validate.yml on main"
+            gh workflow run validate.yml --ref "$BASE_BRANCH" || echo "::warning::could not dispatch validate.yml on $BASE_BRANCH"
           fi
           if [ "$PR_OP" = "created" ] || [ "$PR_OP" = "updated" ]; then
             gh workflow run validate.yml --ref "$PR_BRANCH" || echo "::warning::could not dispatch validate.yml on $PR_BRANCH"
@@ -234,10 +291,33 @@ jobs:
           fi
 
       # Public repos auto-disable scheduled workflows after 60 days without
-      # repository activity. The --touch heartbeat only commits when a run
-      # succeeds, so also re-enable via the API on every run (no commit needed).
+      # repository activity. Two independent guards:
+      #   1. re-enable the workflow through the API on every run;
+      #   2. if the base branch has had no commit for HEARTBEAT_AFTER_DAYS
+      #      (e.g. every refresh failed for weeks), push a heartbeat commit.
+      #      A commit is unambiguously "repository activity".
       - name: Keep scheduled workflow enabled
         if: always()
         run: |
           gh api -X PUT "repos/${GH_REPO}/actions/workflows/refresh.yml/enable" \
             || echo "::warning::keepalive API call failed"
+
+      - name: Heartbeat commit when the base branch has been idle
+        if: always()
+        run: |
+          git fetch -q origin "$BASE_BRANCH"
+          last_ts=$(git log -1 --format=%ct "origin/${BASE_BRANCH}")
+          age_days=$(( ($(date +%s) - last_ts) / 86400 ))
+          echo "${BASE_BRANCH} last commit ${age_days} day(s) ago (heartbeat after ${HEARTBEAT_AFTER_DAYS})"
+          if [ "$age_days" -lt "$HEARTBEAT_AFTER_DAYS" ]; then
+            exit 0
+          fi
+          wt="$RUNNER_TEMP/heartbeat"
+          git worktree add -q --detach "$wt" "origin/${BASE_BRANCH}"
+          printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_URL" > "$wt/.github/refresh-heartbeat"
+          git -C "$wt" add .github/refresh-heartbeat
+          git -C "$wt" -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "chore: refresh heartbeat (keep scheduled workflow active)" -m "Run: ${RUN_URL}"
+          git -C "$wt" push origin "HEAD:${BASE_BRANCH}"
+          git worktree remove --force "$wt"

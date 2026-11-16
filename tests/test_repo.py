@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 import urllib.error
 from datetime import date
 from pathlib import Path
@@ -23,6 +24,8 @@ import fetch_vendor_facts as fetch_vf  # noqa: E402
 import hold_tier_shifts  # noqa: E402
 import jsonschema  # noqa: E402
 import refresh_common  # noqa: E402
+import selftest_inject_tier_flip  # noqa: E402
+import selftest_verify  # noqa: E402
 import validate  # noqa: E402
 
 
@@ -233,6 +236,47 @@ class FetchArtificialAnalysisTests(unittest.TestCase):
         self.assertIn(("moonshotai/kimi-k3", "default"), entries)
 
 
+class ValsParserTests(unittest.TestCase):
+    @staticmethod
+    def _island(props: dict) -> str:
+        import html as _html
+
+        return f'<astro-island component-url="/_astro/X.js" props="{_html.escape(json.dumps(props), quote=True)}"></astro-island>'
+
+    def test_parses_current_vals_index_page_layout(self) -> None:
+        # Shape observed live on https://www.vals.ai/benchmarks/vals_index (2026-11-16).
+        item = lambda model, acc: [0, {"model": [0, model], "accuracy": [0, acc], "position": [0, 1]}]  # noqa: E731
+        page = self._island({"current": [0, "vals_index"]}) + self._island(
+            {
+                "regularLeaderboardItems": [1, [item("Claude Fable 5.2", "71.31"), item("Claude Opus 5.5", "70.14")]],
+                "openSourceLeaderboardItems": [1, [item("GLM 5.3", "55.04"), item("Claude Opus 5.5", "70.14")]],
+            }
+        )
+        rows = fetch_aa.parse_vals_benchmarks(page)
+        self.assertEqual(
+            rows,
+            [
+                {"model_label": "Claude Fable 5.2", "score": 71.3},
+                {"model_label": "Claude Opus 5.5", "score": 70.1},
+                {"model_label": "GLM 5.3", "score": 55.0},
+            ],
+        )
+
+    def test_still_parses_legacy_hub_layout(self) -> None:
+        pt = lambda label, score: [0, {"label": [0, label], "score": [0, score]}]  # noqa: E731
+        page = self._island({"companies": [1, [[0, {"points": [1, [pt("Kimi K3", 53.0)]]}]]]})
+        self.assertEqual(fetch_aa.parse_vals_benchmarks(page), [{"model_label": "Kimi K3", "score": 53.0}])
+
+    def test_index_page_without_scores_parses_to_nothing(self) -> None:
+        # What /benchmarks returned after the redesign: only navigation islands.
+        page = self._island({"sets": [1, [[0, {"name": [0, "Vals Index"], "slug": [0, "vals_index"]}]]]})
+        self.assertEqual(fetch_aa.parse_vals_benchmarks(page), [])
+
+    def test_legacy_vals_evidence_is_still_benchmark_managed(self) -> None:
+        entry = {"evidence": [_ev(fetch_aa.AA_URL, "AA 1", "2026-11-01"), _ev(fetch_aa.VALS_LEGACY_URL, "Vals 1", "2026-11-01")]}
+        self.assertTrue(fetch_aa.is_aa_managed(entry))
+
+
 class StalenessTests(unittest.TestCase):
     def test_parse_args_and_tier_gate(self) -> None:
         self.assertEqual(check_staleness.parse_args([]).days, 30)
@@ -267,6 +311,82 @@ class StalenessTests(unittest.TestCase):
 
 def _ev(source: str, note: str, checked: str) -> dict:
     return {"kind": "benchmark", "source": source, "checkedAt": checked, "note": note}
+
+
+class SelfTestHelperTests(unittest.TestCase):
+    def test_simulated_outage_only_hits_listed_hosts(self) -> None:
+        calls = []
+
+        def opener(req, timeout):
+            calls.append(req.full_url)
+            raise AssertionError("simulated host must never be contacted")
+
+        old = os.environ.get(refresh_common.SIMULATE_FAIL_ENV)
+        os.environ[refresh_common.SIMULATE_FAIL_ENV] = "docs.x.ai, Scale.com"
+        try:
+            sleeps: list[float] = []
+            with self.assertRaises(urllib.error.URLError):
+                refresh_common.fetch_url("https://scale.com/leaderboard", opener=opener, sleep=sleeps.append)
+            self.assertEqual(calls, [])
+            self.assertEqual(sleeps, [3.0, 6.0])  # retry path is exercised too
+            self.assertFalse(refresh_common._simulated_outage("https://platform.claude.com/docs"))
+        finally:
+            if old is None:
+                os.environ.pop(refresh_common.SIMULATE_FAIL_ENV, None)
+            else:
+                os.environ[refresh_common.SIMULATE_FAIL_ENV] = old
+        with unittest.mock.patch.dict(os.environ, {refresh_common.SIMULATE_FAIL_ENV: ""}):
+            self.assertFalse(refresh_common._simulated_outage("https://scale.com/leaderboard"))
+
+    def test_inject_flip_is_deterministic_single_source_and_valid(self) -> None:
+        tiers, _ = validate.load_json(validate.TIERS_PATH)
+        facts, raw = validate.load_json(validate.FACTS_PATH)
+        a, b = copy.deepcopy(tiers), copy.deepcopy(tiers)
+        r1 = selftest_inject_tier_flip.inject(a, tiers)
+        r2 = selftest_inject_tier_flip.inject(b, tiers)
+        self.assertEqual(r1, r2)
+        key, effort, old, new = r1
+        self.assertNotEqual(old, new)
+        self.assertEqual(len(a["entries"][0]["evidence"]), 1)
+        gate = check_staleness.evaluate_tier_gate(tiers, a)
+        self.assertEqual(gate["single_source_idents"], [[key, effort]])
+        # Regression (live self-test run 1): today's data already moved the entry
+        # one band; the injected tier must still differ from HEAD.
+        moved = copy.deepcopy(tiers)
+        moved["entries"][0]["tier"] = selftest_inject_tier_flip.NEXT_TIER[tiers["entries"][0]["tier"]]
+        selftest_inject_tier_flip.inject(moved, tiers)
+        self.assertNotEqual(moved["entries"][0]["tier"], tiers["entries"][0]["tier"])
+        gate2 = check_staleness.evaluate_tier_gate(tiers, moved)
+        self.assertEqual(gate2["single_source_idents"], [[key, effort]])
+        _, fact_efforts = validate.check_facts(facts, raw)
+        self.assertEqual(validate.check_tiers(a, fact_efforts, facts["date"]), [])
+
+    def test_tier_diffs_classifies_changes(self) -> None:
+        base = {
+            "date": "2026-11-15",
+            "entries": [
+                {"key": "a/b", "effort": "max", "tier": "mid", "rank": {"r": 1},
+                 "evidence": [_ev(fetch_aa.AA_URL, "AA 40", "2026-11-01")]},
+                {"key": "c/d", "effort": "default", "tier": "low", "rank": {"r": 2},
+                 "evidence": [_ev(fetch_aa.AA_URL, "AA 20", "2026-11-01")]},
+            ],
+        }
+        other = copy.deepcopy(base)
+        other["date"] = "2026-11-16"
+        other["entries"][0]["tier"] = "frontier"
+        other["entries"][0]["evidence"][0]["checkedAt"] = "2026-11-16"
+        other["entries"][1]["evidence"][0]["note"] = "AA 21"
+        diffs = selftest_verify.tier_diffs(base, other)
+        self.assertEqual(
+            diffs,
+            [
+                ("<top>", "", "date"),
+                ("a/b", "max", "tier"),
+                ("a/b", "max", "evidence.checkedAt"),
+                ("c/d", "default", "evidence"),
+            ],
+        )
+        self.assertEqual(selftest_verify.tier_diffs(base, copy.deepcopy(base)), [])
 
 
 class RefreshCommonTests(unittest.TestCase):
@@ -672,6 +792,9 @@ class RefreshAlertScriptTests(unittest.TestCase):
                 "RUN_URL": "https://github.com/o/r/actions/runs/1",
                 "JOB_STATUS": "success",
                 "PR_OUTCOME": "skipped",
+                # Job-level env of a self-test refresh run must not leak in.
+                "ALERT_LABEL": "refresh-alert",
+                "ALERT_TITLE": "refresh: automated data refresh needs attention",
             }
         )
         env.update(env_overrides)

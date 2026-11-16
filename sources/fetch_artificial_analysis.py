@@ -6,7 +6,7 @@ Benchmark sources:
      - Intelligence Index (reasoning) + Terminal-Bench 4.0 & FrontierCode 2.0 (coding)
   2. Terminal-Bench Official Leaderboard (https://www.tbench.ai/leaderboard)
      - Agentic terminal coding accuracy across 330 trials per (model, effort)
-  3. Vals AI Enterprise & Coding Benchmarks (https://www.vals.ai/benchmarks)
+  3. Vals AI Index (https://www.vals.ai/benchmarks/vals_index)
      - Vals Index composite across enterprise coding, legal, finance, multimodal
   4. Scale AI SEAL Leaderboards (https://scale.com/leaderboard)
      - SWE Atlas, SWE-Bench Pro V2, MCP Atlas, HLE Diamond, MultiChallenge
@@ -47,12 +47,17 @@ TIERS_PATH = ROOT / "model-tiers.json"
 AA_URL = "https://artificialanalysis.ai/leaderboards/models"
 AA_SOURCE = AA_URL
 TBENCH_URL = "https://www.tbench.ai/leaderboard"
-VALS_URL = "https://www.vals.ai/benchmarks"
+# Since 2026-11-16 the Vals Index leaderboard lives on its own page; the old
+# hub URL is kept as a managed alias so existing evidence migrates cleanly.
+VALS_URL = "https://www.vals.ai/benchmarks/vals_index"
+VALS_LEGACY_URL = "https://www.vals.ai/benchmarks"
 SCALE_URL = "https://scale.com/leaderboard"
 
-MANAGED_BENCHMARK_SOURCES = {AA_URL, TBENCH_URL, VALS_URL, SCALE_URL}
+MANAGED_BENCHMARK_SOURCES = {AA_URL, TBENCH_URL, VALS_URL, VALS_LEGACY_URL, SCALE_URL}
 # Canonical evidence order (matches the order build_aa_entries appends sources).
-SOURCE_ORDER = {AA_URL: 0, TBENCH_URL: 1, VALS_URL: 2, SCALE_URL: 3}
+SOURCE_ORDER = {AA_URL: 0, TBENCH_URL: 1, VALS_URL: 2, VALS_LEGACY_URL: 2, SCALE_URL: 3}
+# Older source URLs still present in committed evidence for a source.
+SOURCE_ALIASES = {VALS_URL: {VALS_LEGACY_URL}}
 
 # Provisional bands on the 0-100 Intelligence Index / normalized score scale.
 FRONTIER_MIN = 50
@@ -259,33 +264,68 @@ def parse_tbench_leaderboard(page: str) -> list[dict[str, Any]]:
     return out
 
 
-def parse_vals_benchmarks(page: str) -> list[dict[str, Any]]:
-    """Parse Vals AI Index model scores from Astro props on https://www.vals.ai/benchmarks."""
+def _astro_props(page: str, marker: str) -> list[dict[str, Any]]:
+    """Decoded ``props`` of every Astro island whose props mention ``marker``."""
     out: list[dict[str, Any]] = []
-    for m in re.finditer(r'props="([^"]*points[^"]*)"', page):
+    for m in re.finditer(r'props="([^"]*)"', page):
+        raw = m.group(1)
+        if marker not in raw:
+            continue
         try:
-            props = json.loads(html.unescape(m.group(1)))
+            out.append(json.loads(html.unescape(raw)))
         except json.JSONDecodeError:
             continue
+    return out
+
+
+def _astro_value(node: Any) -> Any:
+    """Astro serializes values as [type, value] pairs; unwrap one level."""
+    return node[1] if isinstance(node, list) and len(node) == 2 else node
+
+
+def parse_vals_benchmarks(page: str) -> list[dict[str, Any]]:
+    """Parse Vals Index model scores from Vals AI Astro island props.
+
+    Current layout (https://www.vals.ai/benchmarks/vals_index, since
+    2026-11-16): ValsIndexSection island with ``regularLeaderboardItems`` and
+    ``openSourceLeaderboardItems`` lists of ``{model, accuracy, ...}``.
+    Legacy layout (https://www.vals.ai/benchmarks): ``companies`` -> ``points``
+    of ``{label, score}``. Both are accepted so a rollback does not break us.
+    """
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def add(label: Any, score: Any) -> None:
+        name = str(label or "").strip()
+        if not name or score in (None, "") or name in seen:
+            return
+        try:
+            value = round(float(score), 1)
+        except (TypeError, ValueError):
+            return
+        seen.add(name)
+        out.append({"model_label": name, "score": value})
+
+    for props in _astro_props(page, "LeaderboardItems"):
+        for list_key in ("regularLeaderboardItems", "openSourceLeaderboardItems"):
+            for elem in _astro_value(props.get(list_key)) or []:
+                obj = _astro_value(elem)
+                if isinstance(obj, dict):
+                    add(_astro_value(obj.get("model")), _astro_value(obj.get("accuracy")))
+    if out:
+        return out
+
+    for props in _astro_props(page, "points"):
         companies = props.get("companies")
         if not (isinstance(companies, list) and len(companies) == 2 and companies[0] == 1):
             continue
         for elem in companies[1]:
             if not (isinstance(elem, list) and len(elem) == 2):
                 continue
-            obj = elem[1]
-            pts = obj.get("points", [1, []])[1]
+            pts = elem[1].get("points", [1, []])[1]
             for pt in pts:
                 pt_obj = pt[1]
-                label = pt_obj.get("label", [0, ""])[1]
-                score = pt_obj.get("score", [0, None])[1]
-                if label and score is not None:
-                    out.append(
-                        {
-                            "model_label": str(label).strip(),
-                            "score": round(float(score), 1),
-                        }
-                    )
+                add(pt_obj.get("label", [0, ""])[1], pt_obj.get("score", [0, None])[1])
     return out
 
 
@@ -761,6 +801,7 @@ def main(argv: list[str] | None = None) -> None:
             status[slug] = "ok" if err is None else f"error: {err}"
             if err is not None:
                 failed_sources.add(url)
+                failed_sources |= SOURCE_ALIASES.get(url, set())
         tbench_rows = secondary["tbench"]
         vals_rows = secondary["vals"]
         scale_rows = secondary["scale"]

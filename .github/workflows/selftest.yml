@@ -1,0 +1,136 @@
+name: selftest
+
+# End-to-end check of the production refresh workflow against a throwaway
+# selftest/base branch (seeded from the commit under test). main is never
+# touched. Run it from the Actions tab after changing refresh.yml or the repo's
+# Actions settings; it takes ~5 minutes and cleans up after itself.
+#
+#   pass 1  simulated outage (docs.x.ai, scale.com) + injected single-source
+#           tier flip -> held commit on base, review PR, alert issue, validate
+#   pass 2  same again -> no churn commit, PR unchanged, alert deduplicated
+#   pass 3  real sources, mode=direct (deterministic regardless of today's
+#           live data), idle thresholds 0 -> PR auto-closed as superseded,
+#           alert auto-closed, --touch re-verification bumps every checkedAt,
+#           heartbeat commit. Fails if a real source is down right now: the
+#           alert then correctly stays open.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: selftest
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Remove leftovers from earlier self-tests
+        run: python3 scripts/selftest_verify.py cleanup
+
+  pass1:
+    needs: prepare
+    uses: ./.github/workflows/refresh.yml
+    with:
+      sandbox_branch: selftest/base
+      simulate_fail_hosts: docs.x.ai,scale.com
+      inject_tier_flip: true
+
+  verify1:
+    needs: pass1
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    outputs:
+      base_sha: ${{ steps.verify.outputs.base_sha }}
+      pr_number: ${{ steps.verify.outputs.pr_number }}
+      pr_tiers_blob: ${{ steps.verify.outputs.pr_tiers_blob }}
+      issue_number: ${{ steps.verify.outputs.issue_number }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: verify
+        name: Verify pass 1
+        run: python3 scripts/selftest_verify.py after-pass1
+
+  pass2:
+    needs: verify1
+    uses: ./.github/workflows/refresh.yml
+    with:
+      sandbox_branch: selftest/base
+      simulate_fail_hosts: docs.x.ai,scale.com
+      inject_tier_flip: true
+
+  verify2:
+    needs: [verify1, pass2]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PASS1_BASE_SHA: ${{ needs.verify1.outputs.base_sha }}
+      PASS1_PR: ${{ needs.verify1.outputs.pr_number }}
+      PASS1_PR_BLOB: ${{ needs.verify1.outputs.pr_tiers_blob }}
+      PASS1_ISSUE: ${{ needs.verify1.outputs.issue_number }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Verify pass 2
+        run: python3 scripts/selftest_verify.py after-pass2
+
+  pass3:
+    needs: verify2
+    uses: ./.github/workflows/refresh.yml
+    with:
+      sandbox_branch: selftest/base
+      mode: direct
+      touch_after_days: "0"
+      heartbeat_after_days: "0"
+
+  verify3:
+    needs: [verify1, pass3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PASS1_PR: ${{ needs.verify1.outputs.pr_number }}
+      PASS1_ISSUE: ${{ needs.verify1.outputs.issue_number }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Verify pass 3
+        run: python3 scripts/selftest_verify.py after-pass3
+
+  cleanup:
+    needs: [prepare, pass1, verify1, pass2, verify2, pass3, verify3]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Delete sandbox branches, PRs, alert issues
+        run: python3 scripts/selftest_verify.py cleanup
