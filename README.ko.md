@@ -63,7 +63,7 @@ model-tf/
 4개 공신력 있는 독립 벤치마크를 결합해 교차 근거(`evidence`)와 축별 순위(`simpleCoding`, `reasoning`)를 산출합니다.
 1. **Artificial Analysis** (`artificialanalysis.ai/leaderboards/models`): Intelligence Index(`reasoning`) + Terminal-Bench 4.0 & FrontierCode 2.0 합성(`simpleCoding`)
 2. **Stanford / Laude Terminal-Bench** (`www.tbench.ai/leaderboard`): 에이전트 터미널 코딩 정확도(330회 시행)
-3. **Vals AI** (`www.vals.ai/benchmarks`): 기업 코딩·법률·금융·멀티모달 종합 `Vals Index`
+3. **Vals AI** (`www.vals.ai/benchmarks/vals_index`): 기업 코딩·법률·금융·멀티모달 종합 `Vals Index`
 4. **Scale AI SEAL** (`scale.com/leaderboard`): `SWE Atlas`, `MCP Atlas`, `HLE Diamond`, `MultiChallenge`, `Humanity's Sixth Sense`
 
 ## 무인 자동 업데이트 (`refresh.yml`)
@@ -97,10 +97,12 @@ model-tf/
    - 새 커밋이 생기지 않음
    - PR 내용이 그대로임
    - 알림이 중복 게시되지 않음
-3. 정상 상황을 돌립니다. 다음을 확인합니다.
+3. 실제 소스로 `mode=direct`로 돌립니다. 그날의 실데이터와 무관하게 결과가 같습니다. 다음을 확인합니다.
    - 대체된 PR이 자동으로 닫힘
    - 복구된 알림이 자동으로 닫힘
    - 하트비트 커밋이 생성됨
+
+   이때 실제 소스가 장애 중이면 알림은 정상적으로 열린 채 남고, 자가 검증은 실패로 표시됩니다.
 
 끝나면 만든 브랜치·PR·이슈·라벨을 모두 지웁니다. 약 5분 걸립니다.
 

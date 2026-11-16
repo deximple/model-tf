@@ -11,8 +11,8 @@ selftest.yml runs the production refresh.yml three times against a throwaway
                validate checks ran green on both bot-made heads
   after-pass2  same scenario again: no churn commit, PR content unchanged,
                alert not re-posted (fingerprint dedupe)
-  after-pass3  healthy run: review PR auto-closed + branch deleted, alert
-               auto-closed, heartbeat commit pushed, sandbox data valid
+  after-pass3  real sources, mode=direct: review PR auto-closed + branch
+               deleted, alert auto-closed, heartbeat commit pushed, data valid
 
 Needs: git (full clone), gh (GH_TOKEN), GITHUB_SHA (commit the sandbox was
 seeded from), GITHUB_REPOSITORY. Writes stage outputs to GITHUB_OUTPUT and a
@@ -275,10 +275,12 @@ def after_pass3() -> None:
     )
     c.check("review branch deleted", not remote_branch_exists(PR_BRANCH))
     issue = gh_json("issue", "view", os.environ["PASS1_ISSUE"], "--json", "state,comments")
+    last = issue["comments"][-1]["body"] if issue["comments"] else ""
+    still_failing = [ln[2:] for ln in last.splitlines() if ln.startswith("- `")]
     c.check(
-        "alert issue auto-closed on recovery",
-        issue["state"] == "CLOSED" and bool(issue["comments"]) and "Recovered" in issue["comments"][-1]["body"],
-        issue["state"],
+        "alert issue auto-closed on recovery (every real source healthy)",
+        issue["state"] == "CLOSED" and "Recovered" in last,
+        issue["state"] + (f"; still failing: {still_failing}" if still_failing else ""),
     )
     base_ref = f"origin/{BASE}"
     subject = run("git", "log", "-1", "--format=%s", base_ref)

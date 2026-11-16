@@ -45,7 +45,7 @@ Three layers exist across the ecosystem; this repo owns the first two:
   across tracked setups from combined benchmark evidence:
   1. **Artificial Analysis** (`artificialanalysis.ai/leaderboards/models`) — Intelligence Index + Terminal-Bench 4.0 & FrontierCode 2.0
   2. **Stanford / Laude Terminal-Bench** (`tbench.ai/leaderboard`) — agentic terminal coding accuracy per (model, effort)
-  3. **Vals AI** (`vals.ai/benchmarks`) — enterprise & coding Vals Index
+  3. **Vals AI** (`vals.ai/benchmarks/vals_index`) — enterprise & coding Vals Index
   4. **Scale AI SEAL** (`scale.com/leaderboard`) — SWE Atlas, MCP Atlas, HLE Diamond, MultiChallenge, Humanity's Sixth Sense
 - Evidence `kind`: `benchmark` (independent evals), `vendor` (maker claims),
   `community` (forums/social). Community evidence alone cannot set a tier.
@@ -104,8 +104,11 @@ times against a throwaway `selftest/base` branch (never `main`):
    and an alert issue is opened.
 2. The same scenario again. It checks that no new commit is made, the PR is
    unchanged, and the alert is not re-posted.
-3. A healthy run. It checks that the review PR is closed as superseded, the
-   alert is closed as recovered, and a heartbeat commit is pushed.
+3. A run against the real sources in `mode=direct`, which makes the result
+   independent of today's live data. It checks that the review PR is closed
+   as superseded, the alert is closed as recovered, and a heartbeat commit is
+   pushed. If a real source is down at that moment, the alert correctly stays
+   open and the self-test fails.
 
 The branches, PRs, issues, and label it creates are deleted at the end. It
 takes about 5 minutes.

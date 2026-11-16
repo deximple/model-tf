@@ -6,7 +6,7 @@ Benchmark sources:
      - Intelligence Index (reasoning) + Terminal-Bench 4.0 & FrontierCode 2.0 (coding)
   2. Terminal-Bench Official Leaderboard (https://www.tbench.ai/leaderboard)
      - Agentic terminal coding accuracy across 330 trials per (model, effort)
-  3. Vals AI Enterprise & Coding Benchmarks (https://www.vals.ai/benchmarks)
+  3. Vals AI Index (https://www.vals.ai/benchmarks/vals_index)
      - Vals Index composite across enterprise coding, legal, finance, multimodal
   4. Scale AI SEAL Leaderboards (https://scale.com/leaderboard)
      - SWE Atlas, SWE-Bench Pro V2, MCP Atlas, HLE Diamond, MultiChallenge
