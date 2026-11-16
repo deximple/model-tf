@@ -105,9 +105,10 @@ times against a throwaway `selftest/base` branch (never `main`):
 2. The same scenario again. It checks that no new commit is made, the PR is
    unchanged, and the alert is not re-posted.
 3. A run against the real sources in `mode=direct`, which makes the result
-   independent of today's live data. It checks that the review PR is closed
-   as superseded, the alert is closed as recovered, and a heartbeat commit is
-   pushed. If a real source is down at that moment, the alert correctly stays
+   independent of today's live data, with both idle thresholds set to 0. It
+   checks that the review PR is closed as superseded, the alert is closed as
+   recovered, the `--touch` re-verification bumps every `checkedAt`, and a
+   heartbeat commit is pushed. If a real source is down at that moment, the alert correctly stays
    open and the self-test fails.
 
 The branches, PRs, issues, and label it creates are deleted at the end. It

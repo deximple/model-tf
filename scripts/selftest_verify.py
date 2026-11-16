@@ -11,8 +11,9 @@ selftest.yml runs the production refresh.yml three times against a throwaway
                validate checks ran green on both bot-made heads
   after-pass2  same scenario again: no churn commit, PR content unchanged,
                alert not re-posted (fingerprint dedupe)
-  after-pass3  real sources, mode=direct: review PR auto-closed + branch
-               deleted, alert auto-closed, heartbeat commit pushed, data valid
+  after-pass3  real sources, mode=direct, idle thresholds 0: review PR
+               auto-closed + branch deleted, alert auto-closed, --touch bumped
+               every checkedAt, heartbeat commit pushed, data valid
 
 Needs: git (full clone), gh (GH_TOKEN), GITHUB_SHA (commit the sandbox was
 seeded from), GITHUB_REPOSITORY. Writes stage outputs to GITHUB_OUTPUT and a
@@ -289,6 +290,18 @@ def after_pass3() -> None:
         "heartbeat commit pushed when base looked idle",
         subject.startswith("chore: refresh heartbeat") and "actions/runs/" in beat,
         subject,
+    )
+    today = time.strftime("%Y-%m-%d", time.gmtime())
+    facts = git_json(base_ref, "model-facts.json") or {"models": []}
+    tiers = git_json(base_ref, "model-tiers.json") or {"entries": []}
+    stale_facts = [v["id"] for m in facts["models"] for v in m["values"] if v["checkedAt"] != today]
+    stale_ev = [
+        f"{e['key']}({e['effort']})" for e in tiers["entries"] for ev in e["evidence"] if ev["checkedAt"] != today
+    ]
+    c.check(
+        "--touch refresh (idle threshold reached) bumped every checkedAt to today",
+        facts.get("date") == today and tiers.get("date") == today and not stale_facts and not stale_ev,
+        f"today={today} stale facts={len(stale_facts)} stale evidence={len(stale_ev)} {(stale_facts + stale_ev)[:5]}",
     )
     with tempfile.TemporaryDirectory() as tmp:
         wt = Path(tmp) / "wt"

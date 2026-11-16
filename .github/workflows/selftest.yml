@@ -9,7 +9,8 @@ name: selftest
 #           tier flip -> held commit on base, review PR, alert issue, validate
 #   pass 2  same again -> no churn commit, PR unchanged, alert deduplicated
 #   pass 3  real sources, mode=direct (deterministic regardless of today's
-#           live data) -> PR auto-closed as superseded, alert auto-closed,
+#           live data), idle thresholds 0 -> PR auto-closed as superseded,
+#           alert auto-closed, --touch re-verification bumps every checkedAt,
 #           heartbeat commit. Fails if a real source is down right now: the
 #           alert then correctly stays open.
 
@@ -102,6 +103,7 @@ jobs:
     with:
       sandbox_branch: selftest/base
       mode: direct
+      touch_after_days: "0"
       heartbeat_after_days: "0"
 
   verify3:

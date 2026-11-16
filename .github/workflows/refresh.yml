@@ -48,6 +48,10 @@ on:
         description: "Idle days on the base branch before a heartbeat commit"
         type: string
         default: "50"
+      touch_after_days:
+        description: "Idle days before a --touch refresh re-verifies and bumps checkedAt"
+        type: string
+        default: "45"
 
 # Never run two refreshes at once (schedule + manual dispatch would race on push).
 concurrency:
@@ -79,6 +83,7 @@ jobs:
       ALERT_TITLE: "${{ inputs.sandbox_branch && '[selftest] refresh: automated data refresh needs attention' || 'refresh: automated data refresh needs attention' }}"
       MODEL_TF_SIMULATE_FAIL_HOSTS: ${{ inputs.simulate_fail_hosts || '' }}
       HEARTBEAT_AFTER_DAYS: ${{ inputs.heartbeat_after_days || '50' }}
+      TOUCH_AFTER_DAYS: ${{ inputs.touch_after_days || '45' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -105,7 +110,7 @@ jobs:
       - name: Install validator dependency
         run: pip install jsonschema
 
-      - name: Determine whether heartbeat touch is needed (>45d since last commit)
+      - name: Determine whether a --touch refresh is needed (idle >= TOUCH_AFTER_DAYS)
         id: touch_check
         env:
           FORCE_TOUCH: ${{ inputs.touch }}
@@ -117,8 +122,8 @@ jobs:
           last_ts=$(git log -1 --format=%ct HEAD)
           now_ts=$(date +%s)
           age_days=$(( (now_ts - last_ts) / 86400 ))
-          echo "Last commit age: ${age_days} days"
-          if [ "$age_days" -ge 45 ]; then
+          echo "Last commit age: ${age_days} days (touch after ${TOUCH_AFTER_DAYS})"
+          if [ "$age_days" -ge "$TOUCH_AFTER_DAYS" ]; then
             echo "flag=--touch" >> "$GITHUB_OUTPUT"
           else
             echo "flag=" >> "$GITHUB_OUTPUT"
