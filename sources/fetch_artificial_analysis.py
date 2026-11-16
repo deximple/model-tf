@@ -49,7 +49,7 @@ AA_SOURCE = AA_URL
 TBENCH_URL = "https://www.tbench.ai/leaderboard"
 # Since 2026-11-16 the Vals Index leaderboard lives on its own page; the old
 # hub URL is kept as a managed alias so existing evidence migrates cleanly.
-VALS_URL = "https://www.vals.ai/benchmarks"
+VALS_URL = "https://www.vals.ai/benchmarks/vals_index"
 VALS_LEGACY_URL = "https://www.vals.ai/benchmarks"
 SCALE_URL = "https://scale.com/leaderboard"
 
@@ -306,17 +306,32 @@ def parse_vals_benchmarks(page: str) -> list[dict[str, Any]]:
         seen.add(name)
         out.append({"model_label": name, "score": value})
 
+    for props in _astro_props(page, "regularLeaderboardItems"):
+        for field in ("regularLeaderboardItems", "openSourceLeaderboardItems"):
+            items = _astro_value(props.get(field))
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                item_obj = _astro_value(item)
+                if isinstance(item_obj, dict):
+                    add(_astro_value(item_obj.get("model")), _astro_value(item_obj.get("accuracy")))
+
     for props in _astro_props(page, "points"):
         companies = props.get("companies")
-        if not (isinstance(companies, list) and len(companies) == 2 and companies[0] == 1):
+        companies = _astro_value(companies)
+        if not isinstance(companies, list):
             continue
-        for elem in companies[1]:
-            if not (isinstance(elem, list) and len(elem) == 2):
+        for elem in companies:
+            company = _astro_value(elem)
+            if not isinstance(company, dict):
                 continue
-            pts = elem[1].get("points", [1, []])[1]
+            pts = _astro_value(company.get("points", [1, []]))
+            if not isinstance(pts, list):
+                continue
             for pt in pts:
-                pt_obj = pt[1]
-                add(pt_obj.get("label", [0, ""])[1], pt_obj.get("score", [0, None])[1])
+                pt_obj = _astro_value(pt)
+                if isinstance(pt_obj, dict):
+                    add(_astro_value(pt_obj.get("label")), _astro_value(pt_obj.get("score")))
     return out
 
 

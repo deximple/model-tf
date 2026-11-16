@@ -246,6 +246,27 @@ class ValsParserTests(unittest.TestCase):
         return f'<astro-island component-url="/_astro/X.js" props="{_html.escape(json.dumps(props), quote=True)}"></astro-island>'
 
 
+    def test_parses_vals_index_leaderboard_layout(self) -> None:
+        page = self._island(
+            {
+                "regularLeaderboardItems": [
+                    1,
+                    [[0, {"model": [0, "Claude Fable 5.2"], "accuracy": [0, "71.31"]}]],
+                ],
+                "openSourceLeaderboardItems": [
+                    1,
+                    [[0, {"model": [0, "Qwen 4 Max"], "accuracy": [0, "64.26"]}]],
+                ],
+            }
+        )
+        self.assertEqual(
+            fetch_aa.parse_vals_benchmarks(page),
+            [
+                {"model_label": "Claude Fable 5.2", "score": 71.3},
+                {"model_label": "Qwen 4 Max", "score": 64.3},
+            ],
+        )
+
     def test_still_parses_legacy_hub_layout(self) -> None:
         pt = lambda label, score: [0, {"label": [0, label], "score": [0, score]}]  # noqa: E731
         page = self._island({"companies": [1, [[0, {"points": [1, [pt("Kimi K3", 53.0)]]}]]]})
