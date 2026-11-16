@@ -33,7 +33,7 @@ model-tf/
     validate.yml                    # push / PR 검증 워크플로
     refresh.yml                     # 매일 예약 + 수동 실행 무인 갱신 워크플로 (selftest가 재사용 호출)
     selftest.yml                    # 임시 브랜치에서 갱신 경로 전체를 실제로 검증하는 자가 검증 워크플로
-    auto-repair.yml                 # 파서 고장 시 Claude Code가 수정 PR을 제안 (검증·게시 분리)
+    auto-repair.yml                 # 파서 고장 시 코딩 에이전트(기본: Copilot CLI)가 수정 PR을 제안 (검증·게시 분리)
     selftest-repair.yml             # 실제 고장을 재현해 자동 수리를 끝까지 검증
 ```
 
@@ -85,21 +85,22 @@ model-tf/
   - **API 재활성화:** 매 실행마다 워크플로를 다시 활성화합니다.
 - **1회 설정 필요(리뷰 PR 경로):** *Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and approve pull requests"* 를 켜 두세요. 꺼져 있으면 PR 단계만 실패하고(알림 이슈에 안내), `main` 반영은 정상 진행됩니다.
 
-## Claude Code 자동 수리 (`auto-repair.yml`)
+## 자동 수리 (`auto-repair.yml`)
 
-갱신 중 어떤 소스가 코드로 고칠 수 있는 방식으로 실패하면, Claude Code가 수정안을 리뷰 PR로 올립니다. 파서가 아무것도 읽지 못하거나 페이지가 옮겨간 경우가 여기에 해당하고, 사이트 장애·속도 제한·TLS 오류는 대상이 아닙니다.
+갱신 중 어떤 소스가 코드로 고칠 수 있는 방식으로 실패하면, 코딩 에이전트가 수정안을 리뷰 PR로 올립니다. 파서가 아무것도 읽지 못하거나 페이지가 옮겨간 경우가 여기에 해당하고, 사이트 장애·속도 제한·TLS 오류는 대상이 아닙니다.
 
-- **에이전트는 쓰기 권한을 갖지 않습니다.** `propose` 잡이 [Claude Code Action](https://github.com/anthropics/claude-code-action)을 Claude Opus 5.5로 실행합니다. 읽기 전용 토큰만 쓰고 git 자격 증명은 없으며, 도구는 파일 읽기·편집과 `python3` 실행으로 제한됩니다.
+- **시크릿이 필요 없습니다.** 기본 에이전트는 [GitHub Copilot CLI](https://github.com/github/copilot-cli)입니다. 잡 자체의 `GITHUB_TOKEN`에 `copilot-requests: write` 권한을 주어 실행하므로, 저장소의 GitHub Copilot 요금제 안에서 처리됩니다. 모델은 요금제에서 쓸 수 있는 것 중 Copilot이 고르며, 고정하려면 저장소 변수 `AUTO_REPAIR_COPILOT_MODEL`을 지정하세요.
+- **에이전트는 쓰기 권한을 갖지 않습니다.** `propose` 잡은 읽기 전용 토큰만 쓰고 git 자격 증명이 없습니다. 에이전트는 파일 편집과 `python3` 실행만 할 수 있고 `git push`·`gh`는 막혀 있으며, 에이전트가 실행하는 명령의 환경에는 토큰이 없습니다.
 - **채택 여부는 에이전트가 아니라 결정론적 검사가 정합니다.** 다음을 모두 만족할 때만 수정안을 채택합니다.
   - 변경이 `sources/`·`tests/` 안에만 있음
   - 단위 테스트와 `validate.py` 통과
   - 다시 수집했을 때 대상 소스가 모두 `ok`
   - 패치의 비밀값 검사 통과
 - **게시 단계는 수정된 코드를 실행하지 않습니다.** `publish` 잡이 검증된 패치만 적용해 `auto-repair` 라벨 PR을 엽니다. 자동 병합은 하지 않습니다.
-- **같은 장애에는 한 번만 시도합니다.** 결과는 `refresh-alert` 이슈에 댓글로 남고, 열린 PR이 있거나 같은 장애를 이미 시도했으면 건너뜁니다.
-- **설정:** *Settings → Secrets and variables → Actions*에 저장소 시크릿 `ANTHROPIC_API_KEY`([Claude Console](https://platform.claude.com)) 또는 `CLAUDE_CODE_OAUTH_TOKEN`(`claude setup-token`)을 추가하세요. 둘 다 없으면 안내만 남기고 건너뜁니다.
+- **같은 장애에는 한 번만 시도합니다.** 결과는 `refresh-alert` 이슈에 댓글로 남고, 열린 PR이 있거나 같은 장애를 이미 시도했으면 건너뜁니다. 에이전트 실행 자체가 실패하면(예: Copilot 사용량 소진) 다음 갱신 때 다시 시도합니다.
+- **Claude Code로 바꾸려면(선택):** 저장소 변수 `AUTO_REPAIR_ENGINE`을 `claude`로 지정하고, *Settings → Secrets and variables → Actions*에 시크릿 `ANTHROPIC_API_KEY` 또는 `CLAUDE_CODE_OAUTH_TOKEN`을 추가하세요. 이 경우 비용은 GitHub이 아니라 Anthropic에서 청구됩니다.
 - **수동 실행:** *Actions → auto-repair → Run workflow*
-- **라이브 검증:** *Actions → selftest-repair → Run workflow*. 임시 브랜치에 2026-11-16의 Vals 고장을 재현한 뒤, 에이전트의 수정이 검증된 PR로 도착하는지 확인합니다. 실행할 때마다 에이전트 호출 1회 비용이 듭니다.
+- **라이브 검증:** *Actions → selftest-repair → Run workflow*. 임시 브랜치에 2026-11-16의 Vals 고장을 재현한 뒤, 에이전트의 수정이 검증된 PR로 도착하는지 확인합니다. 실행할 때마다 에이전트 세션 1회를 씁니다.
 
 ## 자가 검증 (`selftest.yml`)
 
