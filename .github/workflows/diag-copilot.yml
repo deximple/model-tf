@@ -21,9 +21,16 @@ jobs:
           node-version: "22"
       - name: Install Copilot CLI
         run: npm install -g @github/copilot && copilot --version
-      - name: One prompt with the job token
+      - name: CLI help
+        run: |
+          copilot --help 2>&1 | head -n 120
+          echo "---- help permissions"; copilot help permissions 2>&1 | head -n 80 || true
+          echo "---- help config"; copilot help config 2>&1 | head -n 60 || true
+      - name: Agentic mini-test with restricted tools
         env:
           COPILOT_GITHUB_TOKEN: ${{ github.token }}
-          GH_TOKEN: ${{ github.token }}
         run: |
-          timeout 180 copilot -p "Reply with the single word ping." -s --no-ask-user 2>&1 | tail -n 20 || echo "exit=$?"
+          mkdir -p "$RUNNER_TEMP/play" && cd "$RUNNER_TEMP/play"
+          timeout 300 copilot -p 'Do three things in order and report each result: (1) create a file hello.txt in the current directory containing the word hi; (2) run the shell command: python3 -c "print(2+2)"; (3) run the shell command: ls -la. End with one line starting with RESULT:' \
+            --no-ask-user --allow-tool 'write' --allow-tool 'shell(python3)' 2>&1 | tail -n 40 || echo "exit=$?"
+          echo "---- files:"; ls -la; cat hello.txt 2>/dev/null || echo "(no hello.txt)"
