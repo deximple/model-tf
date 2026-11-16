@@ -964,6 +964,11 @@ class AutoRepairTests(unittest.TestCase):
         page = ValsParserTests._island({"regularLeaderboardItems": [1, [item]]})
         self.assertEqual(ns["parse_vals_benchmarks"](page), [])
         self.assertTrue(fetch_aa.parse_vals_benchmarks(page))  # the real code still parses it
+        tiers_src = (ROOT / "model-tiers.json").read_text(encoding="utf-8")
+        old_tiers = json.loads(selftest_break_vals.break_tiers(tiers_src))
+        sources = {ev["source"] for e in old_tiers["entries"] for ev in e["evidence"]}
+        self.assertNotIn(selftest_break_vals.NEW_VALS_URL, sources)
+        self.assertIn(selftest_break_vals.OLD_VALS_URL, sources)
 
     def test_scan_patch_rejects_secrets(self) -> None:
         clean = "+VALS_URL = 'https://www.vals.ai/benchmarks/vals_index'\n"
