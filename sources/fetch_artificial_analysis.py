@@ -49,7 +49,7 @@ AA_SOURCE = AA_URL
 TBENCH_URL = "https://www.tbench.ai/leaderboard"
 # Since 2026-11-16 the Vals Index leaderboard lives on its own page; the old
 # hub URL is kept as a managed alias so existing evidence migrates cleanly.
-VALS_URL = "https://www.vals.ai/benchmarks"
+VALS_URL = "https://www.vals.ai/benchmarks/vals_index"
 VALS_LEGACY_URL = "https://www.vals.ai/benchmarks"
 SCALE_URL = "https://scale.com/leaderboard"
 
@@ -286,9 +286,8 @@ def _astro_value(node: Any) -> Any:
 def parse_vals_benchmarks(page: str) -> list[dict[str, Any]]:
     """Parse Vals Index model scores from Vals AI Astro island props.
 
-    Current layout (https://www.vals.ai/benchmarks/vals_index, since
-    2026-11-16): ValsIndexSection island with ``regularLeaderboardItems`` and
-    ``openSourceLeaderboardItems`` lists of ``{model, accuracy, ...}``.
+    Current layout: ValsIndexSection island with ``regularLeaderboardItems``
+    and ``openSourceLeaderboardItems`` lists of ``{model, accuracy, ...}``.
     Legacy layout (https://www.vals.ai/benchmarks): ``companies`` -> ``points``
     of ``{label, score}``. Both are accepted so a rollback does not break us.
     """
@@ -305,6 +304,17 @@ def parse_vals_benchmarks(page: str) -> list[dict[str, Any]]:
             return
         seen.add(name)
         out.append({"model_label": name, "score": value})
+
+    for props in _astro_props(page, "regularLeaderboardItems"):
+        for key in ("regularLeaderboardItems", "openSourceLeaderboardItems"):
+            items = _astro_value(props.get(key))
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                row = _astro_value(item)
+                if not isinstance(row, dict):
+                    continue
+                add(_astro_value(row.get("model")), _astro_value(row.get("accuracy")))
 
     for props in _astro_props(page, "points"):
         companies = props.get("companies")
