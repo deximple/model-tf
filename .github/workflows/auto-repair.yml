@@ -189,7 +189,7 @@ jobs:
             echo "${delim}"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: steps.decide.outputs.status == 'run' && steps.engine.outputs.name == 'copilot'
         with:
           node-version: "22"
@@ -332,7 +332,7 @@ jobs:
             echo
             echo "## Verified by the workflow (not by the agent)"
             echo "- Changed files are confined to \`sources/\` and \`tests/\`: $scope"
-            echo "- \`python -m unittest discover -s tests\`: $(tail -n 1 "$out/tests.log")"
+            echo "- \`python -m unittest discover -s tests\`: $(grep -E '^(Ran [0-9]+ tests? in |OK|FAILED)' "$out/tests.log" | paste -sd' ' -)"
             echo "- \`python scripts/validate.py\`: $(tail -n 1 "$out/validate.log")"
             echo "- Fresh collector run, source status after the change:"
             sed 's/^/  - /' "$out/verify.log"
@@ -347,7 +347,7 @@ jobs:
 
       - name: Upload the verified patch
         if: steps.check.outputs.status == 'fixed'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: auto-repair
           path: |
@@ -377,7 +377,7 @@ jobs:
         with:
           ref: ${{ env.BASE_BRANCH }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v6
         with:
           name: auto-repair
           path: ${{ runner.temp }}/repair
