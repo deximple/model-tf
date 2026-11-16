@@ -45,7 +45,8 @@ jobs:
       - name: Lint workflow files (actionlint)
         run: |
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
-          ./actionlint -color
+          # 1.7.7 predates the copilot-requests permission (Copilot CLI on GITHUB_TOKEN).
+          ./actionlint -color -ignore 'unknown permission scope "copilot-requests"'
 
       - name: Lint shell scripts (shellcheck)
         run: shellcheck scripts/*.sh
