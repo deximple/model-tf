@@ -10,7 +10,7 @@
   {
    "key": "alibaba/qwen3.8-max",
    "effort": "default",
-   "tier": "mid",
+   "tier": "low",
    "rank": {
     "simpleCoding": 40,
     "reasoning": 59
@@ -19,7 +19,7 @@
     {
      "kind": "benchmark",
      "source": "https://www.tbench.ai/leaderboard",
-     "checkedAt": "2026-11-15",
+     "checkedAt": "2026-11-16",
      "note": "Terminal-Bench accuracy 26.97% (Claude Code)"
     }
    ]
