@@ -956,6 +956,7 @@ class AutoRepairTests(unittest.TestCase):
         # Concatenated so this test's own source does not contain the needle.
         self.assertNotIn("    def test_parses_current_vals_index_page_layout" + "(self)", broken_tests)
         self.assertIn("    def test_still_parses_legacy_hub_layout" + "(self)", broken_tests)
+        self.assertNotIn("    def test_selftest_breakage_still_applies_to_current_code" + "(self)", broken_tests)
         ns: dict = {"__name__": "broken_collector", "__file__": str(ROOT / "sources" / "fetch_artificial_analysis.py")}
         sys.modules.setdefault("refresh_common", refresh_common)
         exec(compile(broken, "broken_collector.py", "exec"), ns)  # noqa: S102 - our own source

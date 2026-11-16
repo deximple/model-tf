@@ -9,7 +9,8 @@ exactly as before the fix, so the Vals source reports "parsed 0 rows".
 Edits in place:
   - sources/fetch_artificial_analysis.py: VALS_URL back to the hub page, and
     the parser branch for the current ValsIndexSection layout removed
-  - tests/test_repo.py: the unit test for the current layout removed
+  - tests/test_repo.py: the unit test for the current layout removed, and the
+    regression test of this script (meaningless once the code is broken)
 
 Usage: python3 scripts/selftest_break_vals.py
 """
@@ -50,14 +51,19 @@ def break_collector(src: str) -> str:
     return replace_once(src, NEW_LAYOUT_BRANCH, "", "current-layout parser branch")
 
 
+REMOVED_TESTS = (
+    "test_parses_current_vals_index_page_layout",
+    "test_selftest_breakage_still_applies_to_current_code",
+)
+
+
 def break_tests(src: str) -> str:
-    pattern = re.compile(
-        r"    def test_parses_current_vals_index_page_layout\(self\) -> None:\n.*?(?=\n    def )", re.S
-    )
-    out, n = pattern.subn("", src)
-    if n != 1:
-        sys.exit(f"selftest_break_vals: expected one current-layout test; found {n}")
-    return out
+    for name in REMOVED_TESTS:
+        pattern = re.compile(rf"    def {name}\(self\) -> None:\n.*?(?=\n    def )", re.S)
+        src, n = pattern.subn("", src)
+        if n != 1:
+            sys.exit(f"selftest_break_vals: expected one {name}; found {n}")
+    return src
 
 
 def main() -> None:

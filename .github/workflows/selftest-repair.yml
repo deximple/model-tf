@@ -14,7 +14,12 @@ on:
   workflow_dispatch:
   push: # TEMPORARY: pre-merge live verification of this branch; removed before merge
     branches: [claude/beautiful-bell-fewls0]
-    paths: [".github/workflows/selftest-repair.yml"]
+    paths:
+      - ".github/workflows/selftest-repair.yml"
+      - ".github/workflows/auto-repair.yml"
+      - "scripts/auto_repair.py"
+      - "scripts/selftest_break_vals.py"
+      - "scripts/selftest_repair_verify.py"
 
 permissions:
   contents: write
