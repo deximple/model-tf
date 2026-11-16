@@ -251,6 +251,25 @@ class ValsParserTests(unittest.TestCase):
         page = self._island({"companies": [1, [[0, {"points": [1, [pt("Kimi K3", 53.0)]]}]]]})
         self.assertEqual(fetch_aa.parse_vals_benchmarks(page), [{"model_label": "Kimi K3", "score": 53.0}])
 
+    def test_parses_vals_index_leaderboard_layout(self) -> None:
+        props = {
+            "regularLeaderboardItems": [
+                1,
+                [[0, {"model": [0, "Claude Fable 5.2"], "accuracy": [0, "71.31"]}]],
+            ],
+            "openSourceLeaderboardItems": [
+                1,
+                [[0, {"model": [0, "Kimi K3.1 Pro"], "accuracy": [0, "62.52"]}]],
+            ],
+        }
+        self.assertEqual(
+            fetch_aa.parse_vals_benchmarks(self._island(props)),
+            [
+                {"model_label": "Claude Fable 5.2", "score": 71.3},
+                {"model_label": "Kimi K3.1 Pro", "score": 62.5},
+            ],
+        )
+
     def test_index_page_without_scores_parses_to_nothing(self) -> None:
         # What /benchmarks returned after the redesign: only navigation islands.
         page = self._island({"sets": [1, [[0, {"name": [0, "Vals Index"], "slug": [0, "vals_index"]}]]]})

@@ -49,7 +49,7 @@ AA_SOURCE = AA_URL
 TBENCH_URL = "https://www.tbench.ai/leaderboard"
 # Since 2026-11-16 the Vals Index leaderboard lives on its own page; the old
 # hub URL is kept as a managed alias so existing evidence migrates cleanly.
-VALS_URL = "https://www.vals.ai/benchmarks"
+VALS_URL = "https://www.vals.ai/benchmarks/vals_index"
 VALS_LEGACY_URL = "https://www.vals.ai/benchmarks"
 SCALE_URL = "https://scale.com/leaderboard"
 
@@ -305,6 +305,17 @@ def parse_vals_benchmarks(page: str) -> list[dict[str, Any]]:
             return
         seen.add(name)
         out.append({"model_label": name, "score": value})
+
+    for props in _astro_props(page, "regularLeaderboardItems"):
+        for key in ("regularLeaderboardItems", "openSourceLeaderboardItems"):
+            items = _astro_value(props.get(key))
+            if not isinstance(items, list):
+                continue
+            for encoded_item in items:
+                item = _astro_value(encoded_item)
+                if not isinstance(item, dict):
+                    continue
+                add(_astro_value(item.get("model")), _astro_value(item.get("accuracy")))
 
     for props in _astro_props(page, "points"):
         companies = props.get("companies")
