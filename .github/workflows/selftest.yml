@@ -16,8 +16,6 @@ name: selftest
 
 on:
   workflow_dispatch:
-  push: # TEMPORARY: pre-merge live verification of this branch; removed before merge
-    branches: [claude/beautiful-bell-fewls0]
 
 permissions:
   contents: write
