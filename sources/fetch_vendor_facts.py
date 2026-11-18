@@ -63,7 +63,8 @@ ZAI_PRICING_URL = "https://docs.z.ai/guides/overview/pricing"
 ZAI_PRICING_MD_URL = "https://docs.z.ai/guides/overview/pricing.md"
 ZAI_GLM53_URL = "https://docs.z.ai/guides/llm/glm-5.3"
 ZAI_GLM53_MD_URL = "https://docs.z.ai/guides/llm/glm-5.3.md"
-OPENCODE_GO_URL = "https://opencode.ai/docs/go/"
+OPENCODE_GO_URL = "https://opencode.ai/inference/go/v1/models"
+OPENCODE_GO_LEGACY_URL = "https://opencode.ai/docs/go/"
 
 MANAGED_SOURCES = {
     CLAUDE_OVERVIEW_URL,
@@ -76,6 +77,7 @@ MANAGED_SOURCES = {
     ZAI_PRICING_URL,
     ZAI_GLM53_URL,
     OPENCODE_GO_URL,
+    OPENCODE_GO_LEGACY_URL,
 }
 
 EFFORT_ORDER = ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
@@ -879,58 +881,10 @@ def _parse_dollar(cell: str) -> int | float | None:
     return _clean_num(float(nums[-1]))
 
 
-def parse_opencode_go_docs(oc_html: str, today: str) -> list[dict[str, Any]]:
-    tables = [
-        _parse_html_table(t)
-        for t in re.findall(r"<table[^>]*>(.*?)</table>", oc_html, re.S)
-    ]
-    id_tables = [t for t in tables if t and t[0][:2] == ["Model", "Model ID"]]
-    price_tables = [
-        t for t in tables if t and t[0][:3] == ["Model", "Input", "Output"]
-    ]
-    if not id_tables or len(price_tables) < 3:
-        return []
-
-    name_to_id = {
-        row[0]: row[1] for row in id_tables[0][1:] if len(row) >= 2 and row[0] and row[1]
-    }
-
-    def resolve_row_model(raw_name: str) -> tuple[str | None, str | None, bool]:
-        if raw_name in name_to_id:
-            return raw_name, name_to_id[raw_name], True
-        m = re.match(r"^(.*?)\s*\(([^()]*)\)\s*$", raw_name)
-        if not m:
-            return None, None, False
-        base, qual = m.group(1).strip(), m.group(2).strip()
-        if base not in name_to_id:
-            return None, None, False
-        if qual.startswith(">") or qual.lower() == "off-peak":
-            return base, name_to_id[base], False
-        return base, name_to_id[base], True
-
+def _build_opencode_go_models(
+    by_model: dict[str, dict[str, Any]], today: str
+) -> list[dict[str, Any]]:
     plans = ["go", "go-plus", "go-teams"]
-    by_model: dict[str, dict[str, Any]] = {}
-    for plan, pt in zip(plans, price_tables[:3]):
-        for row in pt[1:]:
-            if len(row) < 6:
-                continue
-            base, mid, keep = resolve_row_model(row[0])
-            if not mid or not keep or not base:
-                continue
-            entry = by_model.setdefault(
-                mid,
-                {
-                    "name": NAME_OVERRIDES.get(mid, base),
-                    "input": _parse_dollar(row[1]),
-                    "output": _parse_dollar(row[2]),
-                    "cachedRead": _parse_dollar(row[3]),
-                    "limits": {},
-                },
-            )
-            lim = _parse_dollar(row[5])
-            if lim is not None:
-                entry["limits"][plan] = lim
-
     models: list[dict[str, Any]] = []
     for mid, data in by_model.items():
         vid = infer_maker(mid)
@@ -990,6 +944,115 @@ def parse_opencode_go_docs(oc_html: str, today: str) -> list[dict[str, Any]]:
             }
         )
     return models
+
+
+def parse_opencode_go_docs(oc_html: str, today: str) -> list[dict[str, Any]]:
+    if oc_html.lstrip().startswith("{"):
+        payload = json.loads(oc_html)
+        records = payload.get("data") if isinstance(payload, dict) else None
+        if not isinstance(records, list):
+            return []
+
+        def number_at(container: Any, key: str) -> int | float | None:
+            value = container.get(key) if isinstance(container, dict) else None
+            return (
+                value
+                if isinstance(value, (int, float)) and not isinstance(value, bool)
+                else None
+            )
+
+        by_model: dict[str, dict[str, Any]] = {}
+        plans = ["go", "go-plus", "go-teams"]
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            mid = record.get("id")
+            name = record.get("name")
+            if (
+                not isinstance(mid, str)
+                or not mid
+                or not isinstance(name, str)
+                or not name
+            ):
+                continue
+            cost = record.get("cost")
+            text_cost = cost.get("text") if isinstance(cost, dict) else None
+            text_cost = text_cost if isinstance(text_cost, dict) else {}
+            input_cost = text_cost.get("input")
+            input_cost = input_cost if isinstance(input_cost, dict) else {}
+            output_cost = text_cost.get("output")
+            output_cost = output_cost if isinstance(output_cost, dict) else {}
+            cache_cost = input_cost.get("cache")
+            go_data = record.get("go")
+            monthly_usage = (
+                go_data.get("monthly_usage") if isinstance(go_data, dict) else None
+            )
+            limits = {
+                plan: amount
+                for plan in plans
+                if (amount := number_at(monthly_usage, plan)) is not None
+            }
+            by_model[mid] = {
+                "name": NAME_OVERRIDES.get(mid, name),
+                "input": number_at(input_cost, "price"),
+                "output": number_at(output_cost, "price"),
+                "cachedRead": number_at(cache_cost, "read"),
+                "limits": limits,
+            }
+        return _build_opencode_go_models(by_model, today)
+
+    tables = [
+        _parse_html_table(t)
+        for t in re.findall(r"<table[^>]*>(.*?)</table>", oc_html, re.S)
+    ]
+    id_tables = [t for t in tables if t and t[0][:2] == ["Model", "Model ID"]]
+    price_tables = [
+        t for t in tables if t and t[0][:3] == ["Model", "Input", "Output"]
+    ]
+    if not id_tables or len(price_tables) < 3:
+        return []
+
+    name_to_id = {
+        row[0]: row[1] for row in id_tables[0][1:] if len(row) >= 2 and row[0] and row[1]
+    }
+
+    def resolve_row_model(raw_name: str) -> tuple[str | None, str | None, bool]:
+        if raw_name in name_to_id:
+            return raw_name, name_to_id[raw_name], True
+        m = re.match(r"^(.*?)\s*\(([^()]*)\)\s*$", raw_name)
+        if not m:
+            return None, None, False
+        base, qual = m.group(1).strip(), m.group(2).strip()
+        if base not in name_to_id:
+            return None, None, False
+        if qual.startswith(">") or qual.lower() == "off-peak":
+            return base, name_to_id[base], False
+        return base, name_to_id[base], True
+
+    plans = ["go", "go-plus", "go-teams"]
+    by_model: dict[str, dict[str, Any]] = {}
+    for plan, pt in zip(plans, price_tables[:3]):
+        for row in pt[1:]:
+            if len(row) < 6:
+                continue
+            base, mid, keep = resolve_row_model(row[0])
+            if not mid or not keep or not base:
+                continue
+            entry = by_model.setdefault(
+                mid,
+                {
+                    "name": NAME_OVERRIDES.get(mid, base),
+                    "input": _parse_dollar(row[1]),
+                    "output": _parse_dollar(row[2]),
+                    "cachedRead": _parse_dollar(row[3]),
+                    "limits": {},
+                },
+            )
+            lim = _parse_dollar(row[5])
+            if lim is not None:
+                entry["limits"][plan] = lim
+
+    return _build_opencode_go_models(by_model, today)
 
 
 def merge_models(
@@ -1148,14 +1211,14 @@ def collect_opencode_go(today: str) -> list[dict[str, Any]]:
     return parse_opencode_go_docs(fetch_url(OPENCODE_GO_URL), today)
 
 
-# (label, source URLs written into values, collector) in merge priority order.
+# (label, current and legacy source URLs, collector) in merge priority order.
 VENDOR_COLLECTORS: list[tuple[str, set[str], Callable[[str], list[dict[str, Any]]]]] = [
     ("claude", {CLAUDE_OVERVIEW_URL, CLAUDE_EFFORT_URL}, collect_claude),
     ("openai", {OPENAI_MODELS_URL, CHATGPT_MODELS_URL}, collect_openai),
     ("google", {GOOGLE_MODELS_URL, GOOGLE_PRICING_URL}, collect_google),
     ("xai", {XAI_MODELS_URL}, collect_xai),
     ("zai", {ZAI_PRICING_URL, ZAI_GLM53_URL}, collect_zai),
-    ("opencode-go", {OPENCODE_GO_URL}, collect_opencode_go),
+    ("opencode-go", {OPENCODE_GO_URL, OPENCODE_GO_LEGACY_URL}, collect_opencode_go),
 ]
 
 
