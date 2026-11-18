@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-16",
+ "date": "2026-11-18",
  "models": [
   {
    "vendorId": "alibaba",
@@ -1603,68 +1603,6 @@
   },
   {
    "vendorId": "openai",
-   "model": "gpt-6-astra",
-   "name": "GPT-6 Astra",
-   "efforts": [
-    "low",
-    "medium",
-    "high",
-    "xhigh",
-    "max"
-   ],
-   "values": [
-    {
-     "id": "openai/gpt-6-astra/cachedReadPricePerMTok",
-     "code": "cachedReadPricePerMTok",
-     "number": 1,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-07"
-    },
-    {
-     "id": "openai/gpt-6-astra/contextTokens",
-     "code": "contextTokens",
-     "number": 1050000,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6-astra/inputKinds",
-     "code": "inputKinds",
-     "number": null,
-     "text": "text,image",
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6-astra/inputPricePerMTok",
-     "code": "inputPricePerMTok",
-     "number": 10,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6-astra/maxOutputTokens",
-     "code": "maxOutputTokens",
-     "number": 128000,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6-astra/outputPricePerMTok",
-     "code": "outputPricePerMTok",
-     "number": 50,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    }
-   ]
-  },
-  {
-   "vendorId": "openai",
    "model": "gpt-6-luna",
    "name": "GPT-6 Luna",
    "efforts": [
@@ -1760,84 +1698,6 @@
   },
   {
    "vendorId": "openai",
-   "model": "gpt-6.1-sol",
-   "name": "GPT-6.1 Sol",
-   "efforts": [
-    "low",
-    "medium",
-    "high",
-    "xhigh",
-    "max"
-   ],
-   "values": [
-    {
-     "id": "openai/gpt-6.1-sol/cachedReadPricePerMTok",
-     "code": "cachedReadPricePerMTok",
-     "number": 0.1,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-07"
-    },
-    {
-     "id": "openai/gpt-6.1-sol/codexContextTokens",
-     "code": "codexContextTokens",
-     "number": 500000,
-     "text": null,
-     "source": "https://learn.chatgpt.com/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6.1-sol/contextTokens",
-     "code": "contextTokens",
-     "number": 1050000,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6.1-sol/defaultEffort",
-     "code": "defaultEffort",
-     "number": null,
-     "text": "medium",
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-07"
-    },
-    {
-     "id": "openai/gpt-6.1-sol/inputKinds",
-     "code": "inputKinds",
-     "number": null,
-     "text": "text,image",
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6.1-sol/inputPricePerMTok",
-     "code": "inputPricePerMTok",
-     "number": 2,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6.1-sol/maxOutputTokens",
-     "code": "maxOutputTokens",
-     "number": 128000,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    },
-    {
-     "id": "openai/gpt-6.1-sol/outputPricePerMTok",
-     "code": "outputPricePerMTok",
-     "number": 10,
-     "text": null,
-     "source": "https://developers.openai.com/api/docs/models",
-     "checkedAt": "2026-11-02"
-    }
-   ]
-  },
-  {
-   "vendorId": "openai",
    "model": "gpt-6.1-terra",
    "name": "GPT-6.1 Terra",
    "efforts": [
@@ -1904,6 +1764,118 @@
      "text": null,
      "source": "https://developers.openai.com/api/docs/models",
      "checkedAt": "2026-11-02"
+    }
+   ]
+  },
+  {
+   "vendorId": "openai",
+   "model": "gpt-6.2-astra",
+   "name": "GPT-6.2 Astra",
+   "efforts": [],
+   "values": [
+    {
+     "id": "openai/gpt-6.2-astra/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.4,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-astra/contextTokens",
+     "code": "contextTokens",
+     "number": 1050000,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-astra/inputKinds",
+     "code": "inputKinds",
+     "number": null,
+     "text": "text,image",
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-astra/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 8,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-astra/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 128000,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-astra/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 40,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    }
+   ]
+  },
+  {
+   "vendorId": "openai",
+   "model": "gpt-6.2-sol",
+   "name": "GPT-6.2 Sol",
+   "efforts": [],
+   "values": [
+    {
+     "id": "openai/gpt-6.2-sol/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.1,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-sol/contextTokens",
+     "code": "contextTokens",
+     "number": 1050000,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-sol/inputKinds",
+     "code": "inputKinds",
+     "number": null,
+     "text": "text,image",
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-sol/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 2,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-sol/maxOutputTokens",
+     "code": "maxOutputTokens",
+     "number": 128000,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
+    },
+    {
+     "id": "openai/gpt-6.2-sol/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 10,
+     "text": null,
+     "source": "https://developers.openai.com/api/docs/models",
+     "checkedAt": "2026-11-18"
     }
    ]
   },
