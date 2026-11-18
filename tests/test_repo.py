@@ -96,6 +96,70 @@ class FetchVendorFactsTests(unittest.TestCase):
         self.assertEqual(fetch_vf.infer_maker("qwen4.0-max"), "alibaba")
         self.assertEqual(fetch_vf.infer_maker("unknown-community-free"), "opencode")
 
+    def test_parse_opencode_go_model_catalog_api(self) -> None:
+        payload = json.dumps(
+            {
+                "object": "list",
+                "data": [
+                    {
+                        "id": "grok-4.7",
+                        "name": "Grok 4.7",
+                        "cost": {
+                            "text": {
+                                "input": {
+                                    "price": 2,
+                                    "cache": {"read": 0.5, "write": 1.5},
+                                },
+                                "output": {"price": 6},
+                            }
+                        },
+                        "go": {
+                            "monthly_usage": {
+                                "go": 15,
+                                "go-plus": 60,
+                                "go-teams": 20,
+                            }
+                        },
+                    }
+                ],
+            }
+        )
+        models = fetch_vf.parse_opencode_go_docs(payload, "2026-11-18")
+        self.assertEqual(len(models), 1)
+        model = models[0]
+        self.assertEqual(
+            (model["vendorId"], model["model"], model["name"]),
+            ("xai", "grok-4.7", "Grok 4.7"),
+        )
+        values = {(v["code"], v["text"]): v["number"] for v in model["values"]}
+        self.assertEqual(values[("inputPricePerMTok", None)], 2)
+        self.assertEqual(values[("outputPricePerMTok", None)], 6)
+        self.assertEqual(values[("cachedReadPricePerMTok", None)], 0.5)
+        self.assertEqual(values[("monthlyLimitUSD", "go")], 15)
+        self.assertEqual(values[("monthlyLimitUSD", "go-plus")], 60)
+        self.assertEqual(values[("monthlyLimitUSD", "go-teams")], 20)
+        self.assertTrue(
+            all(v["source"] == fetch_vf.OPENCODE_GO_URL for v in model["values"])
+        )
+
+    def test_parse_opencode_go_legacy_tables(self) -> None:
+        page = (
+            "<table><tr><th>Model</th><th>Model ID</th></tr>"
+            "<tr><td>Grok 4.7</td><td>grok-4.7</td></tr></table>"
+            + "".join(
+                "<table><tr><th>Model</th><th>Input</th><th>Output</th>"
+                "<th>Cache read</th><th>Notes</th><th>Limit</th></tr>"
+                "<tr><td>Grok 4.7</td><td>$2</td><td>$6</td>"
+                "<td>$0.5</td><td>-</td><td>$15</td></tr></table>"
+                for _ in range(3)
+            )
+        )
+        models = fetch_vf.parse_opencode_go_docs(page, "2026-11-18")
+        self.assertEqual(len(models), 1)
+        values = {(v["code"], v["text"]): v["number"] for v in models[0]["values"]}
+        self.assertEqual(values[("inputPricePerMTok", None)], 2)
+        self.assertEqual(values[("monthlyLimitUSD", "go-teams")], 15)
+
     def test_parse_claude_docs_extracts_specs_and_cache_rates(self) -> None:
         md = (
             "All current models support text and image input.\n"
@@ -537,6 +601,23 @@ class VendorIsolationTests(unittest.TestCase):
         self.assertEqual(vals["inputPricePerMTok"]["source"], self.CLAUDE)
         # Healthy vendor's unchanged value keeps its previous checkedAt.
         self.assertEqual(vals["monthlyLimitUSD/go"]["checkedAt"], "2026-11-01")
+
+    def test_failed_opencode_go_keeps_legacy_source_evidence(self) -> None:
+        existing = self._existing()
+        legacy_url = fetch_vf.OPENCODE_GO_LEGACY_URL
+        existing[1]["values"][1]["source"] = legacy_url
+        collectors = fetch_vf.VENDOR_COLLECTORS
+        opencode_index = len(collectors) - 1
+        held = {opencode_index: collectors[opencode_index][1]}
+        merged = fetch_vf.merge_models(
+            existing,
+            [[] for _ in collectors],
+            today="2026-11-18",
+            held=held,
+        )
+        opus = next(m for m in merged if m["model"] == "claude-opus-5-5")
+        self.assertEqual(opus["values"][0]["source"], legacy_url)
+        self.assertEqual(opus["values"][0]["checkedAt"], "2026-11-01")
 
     def test_failed_lower_priority_vendor_does_not_override_fresh_first_party_value(self) -> None:
         opus = "claude/claude-opus-5-5"
