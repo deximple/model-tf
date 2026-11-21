@@ -1,7 +1,7 @@
 {
  "version": 1,
- "date": "2026-11-20",
- "factsDate": "2026-11-20",
+ "date": "2026-11-21",
+ "factsDate": "2026-11-21",
  "axis": [
   "simpleCoding",
   "reasoning"
@@ -67,6 +67,12 @@
      "source": "https://artificialanalysis.ai/leaderboards/models",
      "checkedAt": "2026-11-18",
      "note": "Artificial Analysis Intelligence Index 61.8, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 54.4"
+    },
+    {
+     "kind": "benchmark",
+     "source": "https://scale.com/leaderboard",
+     "checkedAt": "2026-11-21",
+     "note": "Scale SEAL: HLE Diamond 72.4"
     }
    ]
   },
@@ -111,8 +117,8 @@
     {
      "kind": "benchmark",
      "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-18",
-     "note": "Scale SEAL: Humanity's Sixth Sense 59.5, HLE Diamond 72.4"
+     "checkedAt": "2026-11-21",
+     "note": "Scale SEAL: Humanity's Sixth Sense 59.5"
     }
    ]
   },
@@ -261,6 +267,12 @@
      "source": "https://artificialanalysis.ai/leaderboards/models",
      "checkedAt": "2026-11-18",
      "note": "Artificial Analysis Intelligence Index 51.8, Coding (Terminal-Bench 4.0 + FrontierCode 2.0) 46.2"
+    },
+    {
+     "kind": "benchmark",
+     "source": "https://scale.com/leaderboard",
+     "checkedAt": "2026-11-21",
+     "note": "Scale SEAL: HLE Diamond 55"
     }
    ]
   },
@@ -307,12 +319,6 @@
      "source": "https://www.vals.ai/benchmarks/vals_index",
      "checkedAt": "2026-11-18",
      "note": "Vals AI Index 70.1%"
-    },
-    {
-     "kind": "benchmark",
-     "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-18",
-     "note": "Scale SEAL: HLE Diamond 55, MCP Atlas 85.4"
     }
    ]
   },
@@ -639,12 +645,6 @@
      "source": "https://www.vals.ai/benchmarks/vals_index",
      "checkedAt": "2026-11-18",
      "note": "Vals AI Index 69.4%"
-    },
-    {
-     "kind": "benchmark",
-     "source": "https://scale.com/leaderboard",
-     "checkedAt": "2026-11-20",
-     "note": "Scale SEAL: MCP Atlas 90.7"
     }
    ]
   },

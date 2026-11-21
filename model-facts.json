@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-20",
+ "date": "2026-11-21",
  "models": [
   {
    "vendorId": "alibaba",
@@ -2394,6 +2394,46 @@
      "text": null,
      "source": "https://docs.x.ai/docs/models",
      "checkedAt": "2026-11-07"
+    }
+   ]
+  },
+  {
+   "vendorId": "xai",
+   "model": "grok-build-0.1",
+   "name": "Grok Build 0.1",
+   "efforts": [],
+   "values": [
+    {
+     "id": "xai/grok-build-0.1/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.2,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-21"
+    },
+    {
+     "id": "xai/grok-build-0.1/contextTokens",
+     "code": "contextTokens",
+     "number": 500000,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-21"
+    },
+    {
+     "id": "xai/grok-build-0.1/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 1,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-21"
+    },
+    {
+     "id": "xai/grok-build-0.1/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 2,
+     "text": null,
+     "source": "https://docs.x.ai/docs/models",
+     "checkedAt": "2026-11-21"
     }
    ]
   },
