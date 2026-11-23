@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-21",
+ "date": "2026-11-23",
  "models": [
   {
    "vendorId": "alibaba",
@@ -1054,89 +1054,57 @@
   },
   {
    "vendorId": "meituan",
-   "model": "longcat-2.0",
-   "name": "LongCat-2.0",
+   "model": "longcat-2.5",
+   "name": "LongCat-2.5",
    "efforts": [],
    "values": [
     {
-     "id": "meituan/longcat-2.0/cachedReadPricePerMTok",
+     "id": "meituan/longcat-2.5/cachedReadPricePerMTok",
      "code": "cachedReadPricePerMTok",
      "number": 0.006,
      "text": null,
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     },
     {
-     "id": "meituan/longcat-2.0/inputPricePerMTok",
+     "id": "meituan/longcat-2.5/inputPricePerMTok",
      "code": "inputPricePerMTok",
      "number": 0.3,
      "text": null,
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     },
     {
-     "id": "meituan/longcat-2.0/monthlyLimitUSD/go",
+     "id": "meituan/longcat-2.5/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
      "number": 60,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     },
     {
-     "id": "meituan/longcat-2.0/monthlyLimitUSD/go-plus",
+     "id": "meituan/longcat-2.5/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
      "number": 240,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     },
     {
-     "id": "meituan/longcat-2.0/monthlyLimitUSD/go-teams",
+     "id": "meituan/longcat-2.5/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
      "number": 65,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     },
     {
-     "id": "meituan/longcat-2.0/outputPricePerMTok",
+     "id": "meituan/longcat-2.5/outputPricePerMTok",
      "code": "outputPricePerMTok",
      "number": 1.2,
      "text": null,
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
-    }
-   ]
-  },
-  {
-   "vendorId": "meituan",
-   "model": "longcat-2.5-free",
-   "name": "LongCat 2.5 Free",
-   "efforts": [],
-   "values": [
-    {
-     "id": "meituan/longcat-2.5-free/cachedReadPricePerMTok",
-     "code": "cachedReadPricePerMTok",
-     "number": 0,
-     "text": null,
-     "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
-    },
-    {
-     "id": "meituan/longcat-2.5-free/inputPricePerMTok",
-     "code": "inputPricePerMTok",
-     "number": 0,
-     "text": null,
-     "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
-    },
-    {
-     "id": "meituan/longcat-2.5-free/outputPricePerMTok",
-     "code": "outputPricePerMTok",
-     "number": 0,
-     "text": null,
-     "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     }
    ]
   },
@@ -2690,26 +2658,26 @@
     {
      "id": "zhipuai/glm-5.3/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
-     "number": 500,
+     "number": 200,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     },
     {
      "id": "zhipuai/glm-5.3/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
-     "number": 1000,
+     "number": 400,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     },
     {
      "id": "zhipuai/glm-5.3/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
-     "number": 505,
+     "number": 205,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-23"
     },
     {
      "id": "zhipuai/glm-5.3/outputPricePerMTok",
