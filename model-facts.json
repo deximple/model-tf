@@ -1,7 +1,55 @@
 {
  "version": 1,
- "date": "2026-11-23",
+ "date": "2026-11-24",
  "models": [
+  {
+   "vendorId": "alibaba",
+   "model": "qwen3-embedding-8b",
+   "name": "Qwen3 Embedding 8B",
+   "efforts": [],
+   "values": [
+    {
+     "id": "alibaba/qwen3-embedding-8b/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.01,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "alibaba/qwen3-embedding-8b/monthlyLimitUSD/go",
+     "code": "monthlyLimitUSD",
+     "number": 15,
+     "text": "go",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "alibaba/qwen3-embedding-8b/monthlyLimitUSD/go-plus",
+     "code": "monthlyLimitUSD",
+     "number": 60,
+     "text": "go-plus",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "alibaba/qwen3-embedding-8b/monthlyLimitUSD/go-teams",
+     "code": "monthlyLimitUSD",
+     "number": 20,
+     "text": "go-teams",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "alibaba/qwen3-embedding-8b/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    }
+   ]
+  },
   {
    "vendorId": "alibaba",
    "model": "qwen3.7-plus",
@@ -1053,6 +1101,102 @@
    ]
   },
   {
+   "vendorId": "google",
+   "model": "gemini-decision-1",
+   "name": "Gemini Decision 1",
+   "efforts": [],
+   "values": [
+    {
+     "id": "google/gemini-decision-1/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.1,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "google/gemini-decision-1/monthlyLimitUSD/go",
+     "code": "monthlyLimitUSD",
+     "number": 15,
+     "text": "go",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "google/gemini-decision-1/monthlyLimitUSD/go-plus",
+     "code": "monthlyLimitUSD",
+     "number": 60,
+     "text": "go-plus",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "google/gemini-decision-1/monthlyLimitUSD/go-teams",
+     "code": "monthlyLimitUSD",
+     "number": 20,
+     "text": "go-teams",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "google/gemini-decision-1/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    }
+   ]
+  },
+  {
+   "vendorId": "google",
+   "model": "gemini-embedding-2",
+   "name": "Gemini Embedding 2",
+   "efforts": [],
+   "values": [
+    {
+     "id": "google/gemini-embedding-2/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.2,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "google/gemini-embedding-2/monthlyLimitUSD/go",
+     "code": "monthlyLimitUSD",
+     "number": 15,
+     "text": "go",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "google/gemini-embedding-2/monthlyLimitUSD/go-plus",
+     "code": "monthlyLimitUSD",
+     "number": 60,
+     "text": "go-plus",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "google/gemini-embedding-2/monthlyLimitUSD/go-teams",
+     "code": "monthlyLimitUSD",
+     "number": 20,
+     "text": "go-teams",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "google/gemini-embedding-2/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    }
+   ]
+  },
+  {
    "vendorId": "meituan",
    "model": "longcat-2.5",
    "name": "LongCat-2.5",
@@ -1666,6 +1810,62 @@
   },
   {
    "vendorId": "openai",
+   "model": "gpt-6-luna-decision",
+   "name": "GPT-6 Luna Decision",
+   "efforts": [],
+   "values": [
+    {
+     "id": "openai/gpt-6-luna-decision/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0.01,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "openai/gpt-6-luna-decision/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.1,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "openai/gpt-6-luna-decision/monthlyLimitUSD/go",
+     "code": "monthlyLimitUSD",
+     "number": 15,
+     "text": "go",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "openai/gpt-6-luna-decision/monthlyLimitUSD/go-plus",
+     "code": "monthlyLimitUSD",
+     "number": 60,
+     "text": "go-plus",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "openai/gpt-6-luna-decision/monthlyLimitUSD/go-teams",
+     "code": "monthlyLimitUSD",
+     "number": 20,
+     "text": "go-teams",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "openai/gpt-6-luna-decision/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    }
+   ]
+  },
+  {
+   "vendorId": "openai",
    "model": "gpt-6.1-terra",
    "name": "GPT-6.1 Terra",
    "efforts": [
@@ -1881,6 +2081,38 @@
   },
   {
    "vendorId": "opencode",
+   "model": "hungerg-free",
+   "name": "HungerG Free",
+   "efforts": [],
+   "values": [
+    {
+     "id": "opencode/hungerg-free/cachedReadPricePerMTok",
+     "code": "cachedReadPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/hungerg-free/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/hungerg-free/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    }
+   ]
+  },
+  {
+   "vendorId": "opencode",
    "model": "iceman-contributor-free",
    "name": "Iceman Contributor Free",
    "efforts": [],
@@ -1908,6 +2140,102 @@
      "text": null,
      "source": "https://opencode.ai/inference/go/v1/models",
      "checkedAt": "2026-11-19"
+    }
+   ]
+  },
+  {
+   "vendorId": "opencode",
+   "model": "jev-1.14",
+   "name": "Jev 1.14",
+   "efforts": [],
+   "values": [
+    {
+     "id": "opencode/jev-1.14/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.042,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/jev-1.14/monthlyLimitUSD/go",
+     "code": "monthlyLimitUSD",
+     "number": 15,
+     "text": "go",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/jev-1.14/monthlyLimitUSD/go-plus",
+     "code": "monthlyLimitUSD",
+     "number": 60,
+     "text": "go-plus",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/jev-1.14/monthlyLimitUSD/go-teams",
+     "code": "monthlyLimitUSD",
+     "number": 20,
+     "text": "go-teams",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/jev-1.14/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    }
+   ]
+  },
+  {
+   "vendorId": "opencode",
+   "model": "text-embedding-3-small",
+   "name": "text-embedding-3-small",
+   "efforts": [],
+   "values": [
+    {
+     "id": "opencode/text-embedding-3-small/inputPricePerMTok",
+     "code": "inputPricePerMTok",
+     "number": 0.02,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/text-embedding-3-small/monthlyLimitUSD/go",
+     "code": "monthlyLimitUSD",
+     "number": 15,
+     "text": "go",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/text-embedding-3-small/monthlyLimitUSD/go-plus",
+     "code": "monthlyLimitUSD",
+     "number": 60,
+     "text": "go-plus",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/text-embedding-3-small/monthlyLimitUSD/go-teams",
+     "code": "monthlyLimitUSD",
+     "number": 20,
+     "text": "go-teams",
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
+    },
+    {
+     "id": "opencode/text-embedding-3-small/outputPricePerMTok",
+     "code": "outputPricePerMTok",
+     "number": 0,
+     "text": null,
+     "source": "https://opencode.ai/inference/go/v1/models",
+     "checkedAt": "2026-11-24"
     }
    ]
   },
@@ -2362,46 +2690,6 @@
      "text": null,
      "source": "https://docs.x.ai/docs/models",
      "checkedAt": "2026-11-07"
-    }
-   ]
-  },
-  {
-   "vendorId": "xai",
-   "model": "grok-build-0.1",
-   "name": "Grok Build 0.1",
-   "efforts": [],
-   "values": [
-    {
-     "id": "xai/grok-build-0.1/cachedReadPricePerMTok",
-     "code": "cachedReadPricePerMTok",
-     "number": 0.2,
-     "text": null,
-     "source": "https://docs.x.ai/docs/models",
-     "checkedAt": "2026-11-21"
-    },
-    {
-     "id": "xai/grok-build-0.1/contextTokens",
-     "code": "contextTokens",
-     "number": 500000,
-     "text": null,
-     "source": "https://docs.x.ai/docs/models",
-     "checkedAt": "2026-11-21"
-    },
-    {
-     "id": "xai/grok-build-0.1/inputPricePerMTok",
-     "code": "inputPricePerMTok",
-     "number": 1,
-     "text": null,
-     "source": "https://docs.x.ai/docs/models",
-     "checkedAt": "2026-11-21"
-    },
-    {
-     "id": "xai/grok-build-0.1/outputPricePerMTok",
-     "code": "outputPricePerMTok",
-     "number": 2,
-     "text": null,
-     "source": "https://docs.x.ai/docs/models",
-     "checkedAt": "2026-11-21"
     }
    ]
   },

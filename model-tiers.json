@@ -1,7 +1,7 @@
 {
  "version": 1,
- "date": "2026-11-23",
- "factsDate": "2026-11-23",
+ "date": "2026-11-24",
+ "factsDate": "2026-11-24",
  "axis": [
   "simpleCoding",
   "reasoning"
@@ -25,8 +25,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 59%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 57.5%"
     }
    ]
   },
@@ -48,8 +48,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 63.2%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 61.7%"
     }
    ]
   },
@@ -111,8 +111,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 71.3%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 70.1%"
     },
     {
      "kind": "benchmark",
@@ -214,8 +214,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 58.7%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 57%"
     }
    ]
   },
@@ -317,8 +317,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 70.1%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 68.7%"
     }
    ]
   },
@@ -414,8 +414,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 70.8%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 69.5%"
     }
    ]
   },
@@ -494,8 +494,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 53%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 50.8%"
     }
    ]
   },
@@ -557,8 +557,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 61.3%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 59.7%"
     }
    ]
   },
@@ -614,8 +614,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 56%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 53.5%"
     }
    ]
   },
@@ -643,8 +643,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 69.4%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 67.4%"
     }
    ]
   },
@@ -723,8 +723,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 53.8%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 51.8%"
     }
    ]
   },
@@ -746,8 +746,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 53%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 51%"
     }
    ]
   },
@@ -775,8 +775,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 62.5%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 60.9%"
     }
    ]
   },
@@ -855,8 +855,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 52.3%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 50.3%"
     }
    ]
   },
@@ -969,8 +969,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 60.5%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 59.5%"
     }
    ]
   },
@@ -1043,8 +1043,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 67.7%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 66.3%"
     },
     {
      "kind": "benchmark",
@@ -1072,8 +1072,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 66.1%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 65.1%"
     },
     {
      "kind": "benchmark",
@@ -1101,8 +1101,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 54.8%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 53.1%"
     }
    ]
   },
@@ -1130,8 +1130,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 59.4%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 57.9%"
     }
    ]
   },
@@ -1153,8 +1153,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 53.2%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 51.3%"
     }
    ]
   },
@@ -1250,8 +1250,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 58.6%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 56.5%"
     }
    ]
   },
@@ -1279,8 +1279,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 54.8%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 52.1%"
     }
    ]
   },
@@ -1308,8 +1308,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 57.8%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 55.3%"
     }
    ]
   },
@@ -1354,8 +1354,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 59.9%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 58.4%"
     }
    ]
   },
@@ -1383,8 +1383,8 @@
     {
      "kind": "benchmark",
      "source": "https://www.vals.ai/benchmarks/vals_index",
-     "checkedAt": "2026-11-18",
-     "note": "Vals AI Index 50.9%"
+     "checkedAt": "2026-11-24",
+     "note": "Vals AI Index 49.5%"
     }
    ]
   }
