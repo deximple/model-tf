@@ -1,6 +1,6 @@
 {
  "version": 1,
- "date": "2026-11-24",
+ "date": "2026-11-25",
  "models": [
   {
    "vendorId": "alibaba",
@@ -19,26 +19,26 @@
     {
      "id": "alibaba/qwen3-embedding-8b/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
-     "number": 15,
+     "number": 10,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "alibaba/qwen3-embedding-8b/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
-     "number": 60,
+     "number": 40,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "alibaba/qwen3-embedding-8b/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
-     "number": 20,
+     "number": 15,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "alibaba/qwen3-embedding-8b/outputPricePerMTok",
@@ -1117,26 +1117,26 @@
     {
      "id": "google/gemini-decision-1/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
-     "number": 15,
+     "number": 10,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "google/gemini-decision-1/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
-     "number": 60,
+     "number": 40,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "google/gemini-decision-1/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
-     "number": 20,
+     "number": 15,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "google/gemini-decision-1/outputPricePerMTok",
@@ -1165,26 +1165,26 @@
     {
      "id": "google/gemini-embedding-2/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
-     "number": 15,
+     "number": 10,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "google/gemini-embedding-2/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
-     "number": 60,
+     "number": 40,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "google/gemini-embedding-2/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
-     "number": 20,
+     "number": 15,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "google/gemini-embedding-2/outputPricePerMTok",
@@ -1619,26 +1619,26 @@
     {
      "id": "moonshotai/kimi-k3.1-pro/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
-     "number": 15,
+     "number": 60,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "moonshotai/kimi-k3.1-pro/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
-     "number": 60,
+     "number": 120,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "moonshotai/kimi-k3.1-pro/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
-     "number": 20,
+     "number": 65,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-19"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "moonshotai/kimi-k3.1-pro/outputPricePerMTok",
@@ -1833,26 +1833,26 @@
     {
      "id": "openai/gpt-6-luna-decision/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
-     "number": 15,
+     "number": 10,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "openai/gpt-6-luna-decision/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
-     "number": 60,
+     "number": 40,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "openai/gpt-6-luna-decision/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
-     "number": 20,
+     "number": 15,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "openai/gpt-6-luna-decision/outputPricePerMTok",
@@ -2160,26 +2160,26 @@
     {
      "id": "opencode/jev-1.14/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
-     "number": 15,
+     "number": 10,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "opencode/jev-1.14/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
-     "number": 60,
+     "number": 40,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "opencode/jev-1.14/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
-     "number": 20,
+     "number": 15,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "opencode/jev-1.14/outputPricePerMTok",
@@ -2208,26 +2208,26 @@
     {
      "id": "opencode/text-embedding-3-small/monthlyLimitUSD/go",
      "code": "monthlyLimitUSD",
-     "number": 15,
+     "number": 10,
      "text": "go",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "opencode/text-embedding-3-small/monthlyLimitUSD/go-plus",
      "code": "monthlyLimitUSD",
-     "number": 60,
+     "number": 40,
      "text": "go-plus",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "opencode/text-embedding-3-small/monthlyLimitUSD/go-teams",
      "code": "monthlyLimitUSD",
-     "number": 20,
+     "number": 15,
      "text": "go-teams",
      "source": "https://opencode.ai/inference/go/v1/models",
-     "checkedAt": "2026-11-24"
+     "checkedAt": "2026-11-25"
     },
     {
      "id": "opencode/text-embedding-3-small/outputPricePerMTok",
